@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,12 +13,15 @@
 #include <openrct2/common.h>
 #include <openrct2/drawing/ImageId.hpp>
 #include <openrct2/localisation/StringIds.h>
+#include <openrct2/util/Util.h>
 
 namespace Dropdown
 {
-    constexpr const rct_string_id SeparatorString = 0;
-    constexpr const rct_string_id FormatColourPicker = 0xFFFE;
-    constexpr const rct_string_id FormatLandPicker = 0xFFFF;
+    struct Item;
+
+    constexpr const StringId SeparatorString = 0;
+    constexpr const StringId FormatColourPicker = 0xFFFE;
+    constexpr const StringId FormatLandPicker = 0xFFFF;
     constexpr const int32_t ItemsMaxSize = 512;
 
     enum Flag
@@ -35,8 +38,7 @@ namespace Dropdown
 } // namespace Dropdown
 
 extern int32_t gDropdownNumItems;
-extern rct_string_id gDropdownItemsFormat[Dropdown::ItemsMaxSize];
-extern int64_t gDropdownItemsArgs[Dropdown::ItemsMaxSize];
+extern Dropdown::Item gDropdownItems[Dropdown::ItemsMaxSize];
 extern bool gDropdownIsColour;
 extern int32_t gDropdownLastColourHover;
 extern int32_t gDropdownHighlightedIndex;
@@ -50,17 +52,46 @@ void WindowDropdownShowImage(
     int32_t x, int32_t y, int32_t extray, uint8_t colour, uint8_t flags, int32_t numItems, int32_t itemWidth,
     int32_t itemHeight, int32_t numColumns);
 void WindowDropdownClose();
-int32_t DropdownIndexFromPoint(const ScreenCoordsXY& loc, rct_window* w);
-void WindowDropdownShowColour(rct_window* w, rct_widget* widget, uint8_t dropdownColour, uint8_t selectedColour);
+int32_t DropdownIndexFromPoint(const ScreenCoordsXY& loc, WindowBase* w);
+void WindowDropdownShowColour(WindowBase* w, Widget* widget, uint8_t dropdownColour, uint8_t selectedColour);
 void WindowDropdownShowColourAvailable(
-    rct_window* w, rct_widget* widget, uint8_t dropdownColour, uint8_t selectedColour, uint32_t availableColours);
+    WindowBase* w, Widget* widget, uint8_t dropdownColour, uint8_t selectedColour, uint32_t availableColours);
 uint32_t DropdownGetAppropriateImageDropdownItemsPerRow(uint32_t numItems);
+bool WindowDropDownHasMultipleColumns(size_t numItems);
 
 namespace Dropdown
 {
+    enum class ItemFlag : uint8_t
+    {
+        IsDisabled = (1 << 0),
+        IsChecked = (1 << 1),
+    };
+
     struct Item
     {
-        constexpr Item(int32_t _expectedItemIndex, uint32_t _itemFormat, rct_string_id _stringId)
+        StringId Format;
+        int64_t Args;
+        uint8_t Flags;
+
+        constexpr bool IsSeparator() const
+        {
+            return Format == SeparatorString;
+        }
+
+        constexpr bool IsDisabled() const
+        {
+            return (Flags & EnumValue(ItemFlag::IsDisabled));
+        }
+
+        constexpr bool IsChecked() const
+        {
+            return (Flags & EnumValue(ItemFlag::IsChecked));
+        }
+    };
+
+    struct ItemExt
+    {
+        constexpr ItemExt(int32_t _expectedItemIndex, uint32_t _itemFormat, StringId _stringId)
             : expectedItemIndex(_expectedItemIndex)
             , itemFormat(_itemFormat)
             , stringId(_stringId)
@@ -69,34 +100,34 @@ namespace Dropdown
 
         int32_t expectedItemIndex;
         uint32_t itemFormat;
-        rct_string_id stringId;
+        StringId stringId;
     };
 
-    constexpr Item ToggleOption(int32_t _expectedItemIndex, rct_string_id _stringId)
+    constexpr ItemExt ToggleOption(int32_t _expectedItemIndex, StringId _stringId)
     {
-        return Item(_expectedItemIndex, STR_TOGGLE_OPTION, _stringId);
+        return ItemExt(_expectedItemIndex, STR_TOGGLE_OPTION, _stringId);
     }
 
-    constexpr Item Separator()
+    constexpr ItemExt Separator()
     {
-        return Item(-1, Dropdown::SeparatorString, STR_EMPTY);
+        return ItemExt(-1, Dropdown::SeparatorString, STR_EMPTY);
     }
 
-    template<int N> void SetItems(const Dropdown::Item (&items)[N])
+    template<int N> void SetItems(const Dropdown::ItemExt (&items)[N])
     {
         for (int i = 0; i < N; ++i)
         {
-            const Item& item = items[i];
-            gDropdownItemsFormat[i] = item.itemFormat;
-            gDropdownItemsArgs[i] = item.stringId;
+            const ItemExt& item = items[i];
+            gDropdownItems[i].Format = item.itemFormat;
+            gDropdownItems[i].Args = item.stringId;
         }
     }
 
-    template<int N> constexpr bool ItemIDsMatchIndices(const Dropdown::Item (&items)[N])
+    template<int N> constexpr bool ItemIDsMatchIndices(const Dropdown::ItemExt (&items)[N])
     {
         for (int i = 0; i < N; ++i)
         {
-            const Dropdown::Item& item = items[i];
+            const Dropdown::ItemExt& item = items[i];
             if (item.expectedItemIndex >= 0 && item.expectedItemIndex != i)
                 return false;
         }

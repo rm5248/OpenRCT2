@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -48,11 +48,6 @@ namespace OpenRCT2::Audio
     assert_struct_size(WaveFormatEx, 18);
 #pragma pack(pop)
 
-    struct ISDLAudioSource : public IAudioSource
-    {
-        [[nodiscard]] virtual AudioFormat GetFormat() const abstract;
-    };
-
     struct ISDLAudioChannel : public IAudioChannel
     {
         [[nodiscard]] virtual AudioFormat GetFormat() const abstract;
@@ -60,23 +55,9 @@ namespace OpenRCT2::Audio
         virtual void SetResampler(SpeexResamplerState* value) abstract;
     };
 
-    namespace AudioSource
-    {
-        IAudioSource* CreateMemoryFromCSS1(const std::string& path, size_t index, const AudioFormat* targetFormat = nullptr);
-        IAudioSource* CreateMemoryFromWAV(const std::string& path, const AudioFormat* targetFormat = nullptr);
-        IAudioSource* CreateStreamFromWAV(const std::string& path);
-        IAudioSource* CreateStreamFromWAV(SDL_RWops* rw);
-        IAudioSource* CreateStreamFromWAV(std::unique_ptr<IStream> stream);
-    } // namespace AudioSource
-
     namespace AudioChannel
     {
         ISDLAudioChannel* Create();
-    }
-
-    namespace AudioMixer
-    {
-        IAudioMixer* Create();
     }
 
     [[nodiscard]] std::unique_ptr<IAudioContext> CreateAudioContext();

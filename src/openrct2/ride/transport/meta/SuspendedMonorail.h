@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -23,7 +23,7 @@ constexpr const RideTypeDescriptor SuspendedMonorailRTD =
     SET_FIELD(ExtraTrackPieces, {}),
     SET_FIELD(CoveredTrackPieces, {}),
     SET_FIELD(StartTrackPiece, TrackElemType::EndStation),
-    SET_FIELD(TrackPaintFunction, get_track_paint_function_suspended_monorail),
+    SET_FIELD(TrackPaintFunction, GetTrackPaintFunctionSuspendedMonorail),
     SET_FIELD(Flags, RIDE_TYPE_FLAGS_TRACK_HAS_3_COLOURS | RIDE_TYPE_FLAG_CAN_SYNCHRONISE_ADJACENT_STATIONS |
                      RIDE_TYPE_FLAG_HAS_LEAVE_WHEN_ANOTHER_VEHICLE_ARRIVES_AT_STATION |
                      RIDE_TYPE_FLAG_HAS_DATA_LOGGING | RIDE_TYPE_FLAG_HAS_LOAD_OPTIONS | RIDE_TYPE_FLAG_HAS_VEHICLE_COLOURS |
@@ -41,10 +41,10 @@ constexpr const RideTypeDescriptor SuspendedMonorailRTD =
     SET_FIELD(Heights, { 12, 40, 32, 8, }),
     SET_FIELD(MaxMass, 78),
     SET_FIELD(LiftData, { OpenRCT2::Audio::SoundId::Null, 5, 5 }),
-    SET_FIELD(RatingsCalculationFunction, ride_ratings_calculate_suspended_monorail),
+    SET_FIELD(RatingsCalculationFunction, RideRatingsCalculateSuspendedMonorail),
     SET_FIELD(RatingsMultipliers, { 70, 6, -10 }),
     SET_FIELD(UpkeepCosts, { 70, 20, 0, 10, 3, 10 }),
-    SET_FIELD(BuildCosts, { 65, 5, 50, }),
+    SET_FIELD(BuildCosts, { 32.50_GBP, 2.50_GBP, 50, }),
     SET_FIELD(DefaultPrices, { 10, 0 }),
     SET_FIELD(DefaultMusic, MUSIC_OBJECT_SUMMER),
     SET_FIELD(PhotoItem, ShopItem::Photo),
@@ -56,5 +56,6 @@ constexpr const RideTypeDescriptor SuspendedMonorailRTD =
     )),
     SET_FIELD(ColourPreview, { SPR_RIDE_DESIGN_PREVIEW_SUSPENDED_MONORAIL_TRACK, SPR_RIDE_DESIGN_PREVIEW_SUSPENDED_MONORAIL_SUPPORTS }),
     SET_FIELD(ColourKey, RideColourKey::Ride),
+    SET_FIELD(Name, "suspended_monorail"),
 };
 // clang-format on

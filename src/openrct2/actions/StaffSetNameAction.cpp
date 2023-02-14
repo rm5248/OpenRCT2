@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -21,10 +21,16 @@
 #include "../windows/Intent.h"
 #include "../world/Park.h"
 
-StaffSetNameAction::StaffSetNameAction(uint16_t spriteIndex, const std::string& name)
+StaffSetNameAction::StaffSetNameAction(EntityId spriteIndex, const std::string& name)
     : _spriteIndex(spriteIndex)
     , _name(name)
 {
+}
+
+void StaffSetNameAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit("id", _spriteIndex);
+    visitor.Visit("name", _name);
 }
 
 uint16_t StaffSetNameAction::GetActionFlags() const
@@ -41,7 +47,7 @@ void StaffSetNameAction::Serialise(DataSerialiser& stream)
 
 GameActions::Result StaffSetNameAction::Query() const
 {
-    if (_spriteIndex >= MAX_ENTITIES)
+    if (_spriteIndex.ToUnderlying() >= MAX_ENTITIES || _spriteIndex.IsNull())
     {
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_STAFF_ERROR_CANT_NAME_STAFF_MEMBER, STR_NONE);
     }
@@ -49,7 +55,7 @@ GameActions::Result StaffSetNameAction::Query() const
     auto staff = TryGetEntity<Staff>(_spriteIndex);
     if (staff == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_STAFF_ERROR_CANT_NAME_STAFF_MEMBER, STR_NONE);
     }
 
@@ -61,7 +67,7 @@ GameActions::Result StaffSetNameAction::Execute() const
     auto staff = TryGetEntity<Staff>(_spriteIndex);
     if (staff == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_STAFF_ERROR_CANT_NAME_STAFF_MEMBER, STR_NONE);
     }
 
@@ -76,10 +82,10 @@ GameActions::Result StaffSetNameAction::Execute() const
         return GameActions::Result(GameActions::Status::Unknown, STR_CANT_NAME_GUEST, STR_NONE);
     }
 
-    gfx_invalidate_screen();
+    GfxInvalidateScreen();
 
     auto intent = Intent(INTENT_ACTION_REFRESH_STAFF_LIST);
-    context_broadcast_intent(&intent);
+    ContextBroadcastIntent(&intent);
 
     auto res = GameActions::Result();
     res.Position = staff->GetLocation();

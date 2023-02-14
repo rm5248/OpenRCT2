@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -31,8 +31,7 @@
 #    include "../OpenRCT2.h"
 #    include "../core/Path.hpp"
 #    include "../localisation/Language.h"
-#    include "Platform2.h"
-#    include "platform.h"
+#    include "Platform.h"
 
 namespace Platform
 {
@@ -48,7 +47,7 @@ namespace Platform
                 if (path.empty())
                 {
                     auto home = GetFolderPath(SPECIAL_FOLDER::USER_HOME);
-                    path = Path::Combine(home, ".config");
+                    path = Path::Combine(home, u8".config");
                 }
                 return path;
             }
@@ -64,10 +63,11 @@ namespace Platform
         static const utf8* searchLocations[] = {
             "./doc",
             "/usr/share/doc/openrct2",
+            DOCDIR,
         };
         for (auto searchLocation : searchLocations)
         {
-            log_verbose("Looking for OpenRCT2 doc path at %s", searchLocation);
+            LOG_VERBOSE("Looking for OpenRCT2 doc path at %s", searchLocation);
             if (Path::DirectoryExists(searchLocation))
             {
                 return searchLocation;
@@ -89,10 +89,9 @@ namespace Platform
     std::string GetInstallPath()
     {
         // 1. Try command line argument
-        auto path = std::string(gCustomOpenRCT2DataPath);
-        if (!path.empty())
+        if (!gCustomOpenRCT2DataPath.empty())
         {
-            return Path::GetAbsolute(path);
+            return Path::GetAbsolute(gCustomOpenRCT2DataPath);
         }
         // 2. Try {${exeDir},${cwd},/}/{data,standard system app directories}
         // exeDir should come first to allow installing into build dir
@@ -117,7 +116,7 @@ namespace Platform
             for (auto searchLocation : SearchLocations)
             {
                 auto prefixedPath = Path::Combine(prefix, searchLocation);
-                log_verbose("Looking for OpenRCT2 data in %s", prefixedPath.c_str());
+                LOG_VERBOSE("Looking for OpenRCT2 data in %s", prefixedPath.c_str());
                 if (Path::DirectoryExists(prefixedPath))
                 {
                     return prefixedPath;
@@ -134,7 +133,7 @@ namespace Platform
         auto bytesRead = readlink("/proc/self/exe", exePath, sizeof(exePath));
         if (bytesRead == -1)
         {
-            log_fatal("failed to read /proc/self/exe");
+            LOG_FATAL("failed to read /proc/self/exe");
         }
 #    elif defined(__FreeBSD__) || defined(__NetBSD__)
 #        if defined(__FreeBSD__)
@@ -155,7 +154,7 @@ namespace Platform
         auto exeLen = sizeof(exePath);
         if (sysctl(mib, 4, exePath, &exeLen, nullptr, 0) == -1)
         {
-            log_fatal("failed to get process path");
+            LOG_FATAL("failed to get process path");
         }
 #    elif defined(__OpenBSD__)
         // There is no way to get the path name of a running executable.
@@ -167,9 +166,9 @@ namespace Platform
         return exePath;
     }
 
-    utf8* StrDecompToPrecomp(utf8* input)
+    u8string StrDecompToPrecomp(u8string_view input)
     {
-        return input;
+        return u8string(input);
     }
 
     bool HandleSpecialCommandLineArgument(const char* argument)
@@ -281,13 +280,13 @@ namespace Platform
         const char* steamRoot = getenv("STEAMROOT");
         if (steamRoot != nullptr)
         {
-            return Path::Combine(steamRoot, "ubuntu12_32/steamapps/content");
+            return Path::Combine(steamRoot, u8"ubuntu12_32/steamapps/content");
         }
 
         const char* localSharePath = getenv("XDG_DATA_HOME");
         if (localSharePath != nullptr)
         {
-            auto steamPath = Path::Combine(localSharePath, "Steam/ubuntu12_32/steamapps/content");
+            auto steamPath = Path::Combine(localSharePath, u8"Steam/ubuntu12_32/steamapps/content");
             if (Path::DirectoryExists(steamPath))
             {
                 return steamPath;
@@ -300,13 +299,13 @@ namespace Platform
             return {};
         }
 
-        auto steamPath = Path::Combine(homeDir, ".local/share/Steam/ubuntu12_32/steamapps/content");
+        auto steamPath = Path::Combine(homeDir, u8".local/share/Steam/ubuntu12_32/steamapps/content");
         if (Path::DirectoryExists(steamPath))
         {
             return steamPath;
         }
 
-        steamPath = Path::Combine(homeDir, ".steam/steam/ubuntu12_32/steamapps/content");
+        steamPath = Path::Combine(homeDir, u8".steam/steam/ubuntu12_32/steamapps/content");
         if (Path::DirectoryExists(steamPath))
         {
             return steamPath;
@@ -318,11 +317,11 @@ namespace Platform
 #    ifndef NO_TTF
     std::string GetFontPath(const TTFFontDescriptor& font)
     {
-        log_verbose("Looking for font %s with FontConfig.", font.font_name);
+        LOG_VERBOSE("Looking for font %s with FontConfig.", font.font_name);
         FcConfig* config = FcInitLoadConfigAndFonts();
         if (!config)
         {
-            log_error("Failed to initialize FontConfig library");
+            LOG_ERROR("Failed to initialize FontConfig library");
             FcFini();
             return {};
         }
@@ -349,7 +348,7 @@ namespace Platform
             if (FcPatternGetString(match, FC_FULLNAME, 0, &matched_font_face) == FcResultMatch
                 && strcmp(font.font_name, reinterpret_cast<const char*>(matched_font_face)) != 0)
             {
-                log_verbose("FontConfig provided substitute font %s -- disregarding.", matched_font_face);
+                LOG_VERBOSE("FontConfig provided substitute font %s -- disregarding.", matched_font_face);
                 is_substitute = true;
             }
 
@@ -357,14 +356,14 @@ namespace Platform
             if (!is_substitute && FcPatternGetString(match, FC_FILE, 0, &filename) == FcResultMatch)
             {
                 path = reinterpret_cast<utf8*>(filename);
-                log_verbose("FontConfig provided font %s", filename);
+                LOG_VERBOSE("FontConfig provided font %s", filename);
             }
 
             FcPatternDestroy(match);
         }
         else
         {
-            log_warning("Failed to find required font.");
+            LOG_WARNING("Failed to find required font.");
         }
 
         FcPatternDestroy(pat);

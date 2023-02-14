@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -70,13 +70,13 @@ GameActions::Result ParkMarketingAction::Execute() const
     campaign.Flags = MarketingCampaignFlags::FIRST_WEEK;
     if (campaign.Type == ADVERTISING_CAMPAIGN_RIDE_FREE || campaign.Type == ADVERTISING_CAMPAIGN_RIDE)
     {
-        campaign.RideId = static_cast<ride_id_t>(_item);
+        campaign.RideId = RideId::FromUnderlying(_item);
     }
     else if (campaign.Type == ADVERTISING_CAMPAIGN_FOOD_OR_DRINK_FREE)
     {
         campaign.ShopItemType = ShopItem(_item);
     }
-    marketing_new_campaign(campaign);
+    MarketingNewCampaign(campaign);
 
     // We are only interested in invalidating the finances (marketing) window
     auto windowManager = OpenRCT2::GetContext()->GetUiContext()->GetWindowManager();

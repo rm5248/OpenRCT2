@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,6 +13,7 @@
 #include "../core/DataSerialiser.h"
 #include "../localisation/Date.h"
 #include "../paint/Paint.h"
+#include "../profiling/Profiling.h"
 #include "../scenario/Scenario.h"
 #include "../sprites.h"
 #include "../world/Surface.h"
@@ -102,7 +103,7 @@ void Duck::UpdateFlyToWater()
     auto destination = CoordsXYZ{ CoordsXY{ x, y } + DuckMoveOffset[direction], 0 };
     int32_t manhattanDistanceN = abs(target_x - destination.x) + abs(target_y - destination.y);
 
-    auto surfaceElement = map_get_surface_element_at(CoordsXY{ target_x, target_y });
+    auto surfaceElement = MapGetSurfaceElementAt(CoordsXY{ target_x, target_y });
     int32_t waterHeight = surfaceElement != nullptr ? surfaceElement->GetWaterHeight() : 0;
     if (waterHeight == 0)
     {
@@ -149,10 +150,10 @@ void Duck::UpdateFlyToWater()
 
 void Duck::UpdateSwim()
 {
-    if (((gCurrentTicks + sprite_index) & 3) != 0)
+    if (((gCurrentTicks + Id.ToUnderlying()) & 3) != 0)
         return;
 
-    uint32_t randomNumber = scenario_rand();
+    uint32_t randomNumber = ScenarioRand();
     if ((randomNumber & 0xFFFF) < 0x666)
     {
         if (randomNumber & 0x80000000)
@@ -170,7 +171,7 @@ void Duck::UpdateSwim()
     }
     else
     {
-        int32_t currentMonth = date_get_month(gDateMonthsElapsed);
+        int32_t currentMonth = DateGetMonth(gDateMonthsElapsed);
         if (currentMonth >= MONTH_SEPTEMBER && (randomNumber >> 16) < 218)
         {
             state = DuckState::FlyAway;
@@ -179,8 +180,8 @@ void Duck::UpdateSwim()
         else
         {
             Invalidate();
-            int16_t landZ = tile_element_height({ x, y });
-            int16_t waterZ = tile_element_water_height({ x, y });
+            int16_t landZ = TileElementHeight({ x, y });
+            int16_t waterZ = TileElementWaterHeight({ x, y });
 
             if (z < landZ || waterZ == 0)
             {
@@ -190,7 +191,7 @@ void Duck::UpdateSwim()
             else
             {
                 z = waterZ;
-                randomNumber = scenario_rand();
+                randomNumber = ScenarioRand();
                 if ((randomNumber & 0xFFFF) <= 0xAAA)
                 {
                     randomNumber >>= 16;
@@ -199,10 +200,10 @@ void Duck::UpdateSwim()
 
                 int32_t direction = sprite_direction >> 3;
                 auto destination = CoordsXYZ{ CoordsXY{ x, y } + DuckMoveOffset[direction], 0 };
-                landZ = tile_element_height(destination);
-                waterZ = tile_element_water_height(destination);
+                landZ = TileElementHeight(destination);
+                waterZ = TileElementWaterHeight(destination);
 
-                if (z >= landZ && z == waterZ)
+                if (z > landZ && z == waterZ)
                 {
                     destination.z = waterZ;
                     MoveTo(destination);
@@ -258,7 +259,7 @@ void Duck::UpdateFlyAway()
         int32_t direction = sprite_direction >> 3;
         auto destination = CoordsXYZ{ x + (DuckMoveOffset[direction].x * 2), y + (DuckMoveOffset[direction].y * 2),
                                       std::min<int32_t>(z + 2, 496) };
-        if (map_is_location_valid(destination))
+        if (MapIsLocationValid(destination))
         {
             MoveTo(destination);
         }
@@ -289,7 +290,7 @@ void Duck::Create(const CoordsXY& pos)
 
     CoordsXY targetPos = pos;
 
-    int32_t offsetXY = scenario_rand() & 0x1E;
+    int32_t offsetXY = ScenarioRand() & 0x1E;
     targetPos.x += offsetXY;
     targetPos.y += offsetXY;
 
@@ -298,20 +299,20 @@ void Duck::Create(const CoordsXY& pos)
     duck->sprite_height_positive = 9;
     duck->target_x = targetPos.x;
     duck->target_y = targetPos.y;
-    uint8_t direction = scenario_rand() & 3;
+    uint8_t direction = ScenarioRand() & 3;
     switch (direction)
     {
         case 0:
-            targetPos.x = 8191 - (scenario_rand() & 0x3F);
+            targetPos.x = GetMapSizeMaxXY().x - (ScenarioRand() & 0x3F);
             break;
         case 1:
-            targetPos.y = scenario_rand() & 0x3F;
+            targetPos.y = ScenarioRand() & 0x3F;
             break;
         case 2:
-            targetPos.x = scenario_rand() & 0x3F;
+            targetPos.x = ScenarioRand() & 0x3F;
             break;
         case 3:
-            targetPos.y = 8191 - (scenario_rand() & 0x3F);
+            targetPos.y = GetMapSizeMaxXY().y - (ScenarioRand() & 0x3F);
             break;
     }
     duck->sprite_direction = direction << 3;
@@ -364,15 +365,17 @@ void Duck::Serialise(DataSerialiser& stream)
     stream << state;
 }
 
-void Duck::Paint(paint_session& session, int32_t imageDirection) const
+void Duck::Paint(PaintSession& session, int32_t imageDirection) const
 {
-    rct_drawpixelinfo& dpi = session.DPI;
+    PROFILED_FUNCTION();
+
+    DrawPixelInfo& dpi = session.DPI;
     if (dpi.zoom_level > ZoomLevel{ 1 })
         return;
 
     uint32_t imageId = GetFrameImage(imageDirection);
     if (imageId != 0)
     {
-        PaintAddImageAsParent(session, imageId, { 0, 0, z }, { 1, 1, 0 });
+        PaintAddImageAsParent(session, ImageId(imageId), { 0, 0, z }, { 1, 1, 0 });
     }
 }

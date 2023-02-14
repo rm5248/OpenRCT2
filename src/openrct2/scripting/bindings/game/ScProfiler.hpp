@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2022 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -84,6 +84,11 @@ namespace OpenRCT2::Scripting
             OpenRCT2::Profiling::ResetData();
         }
 
+        bool enabled_get() const
+        {
+            return OpenRCT2::Profiling::IsEnabled();
+        }
+
     public:
         static void Register(duk_context* ctx)
         {
@@ -91,6 +96,7 @@ namespace OpenRCT2::Scripting
             dukglue_register_method(ctx, &ScProfiler::start, "start");
             dukglue_register_method(ctx, &ScProfiler::stop, "stop");
             dukglue_register_method(ctx, &ScProfiler::reset, "reset");
+            dukglue_register_property(ctx, &ScProfiler::enabled_get, nullptr, "enabled");
         }
     };
 } // namespace OpenRCT2::Scripting

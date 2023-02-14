@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -23,7 +23,7 @@
 
 using namespace OpenRCT2::Scripting;
 
-Plugin::Plugin(duk_context* context, const std::string& path)
+Plugin::Plugin(duk_context* context, std::string_view path)
     : _context(context)
     , _path(path)
 {
@@ -73,15 +73,23 @@ void Plugin::Load()
     }
 
     _metadata = GetMetadata(DukValue::take_from_stack(_context));
+    _hasLoaded = true;
 }
 
 void Plugin::Start()
 {
+    if (!_hasLoaded)
+    {
+        throw std::runtime_error("Plugin has not been loaded.");
+    }
+
     const auto& mainFunc = _metadata.Main;
     if (mainFunc.context() == nullptr)
     {
         throw std::runtime_error("No main function specified.");
     }
+
+    _hasStarted = true;
 
     mainFunc.push();
     auto result = duk_pcall(_context, 0);
@@ -92,13 +100,31 @@ void Plugin::Start()
         throw std::runtime_error("[" + _metadata.Name + "] " + val);
     }
     duk_pop(_context);
-
-    _hasStarted = true;
 }
 
-void Plugin::Stop()
+void Plugin::StopBegin()
 {
+    _isStopping = true;
+}
+
+void Plugin::StopEnd()
+{
+    _isStopping = false;
     _hasStarted = false;
+}
+
+void Plugin::ThrowIfStopping() const
+{
+    if (IsStopping())
+    {
+        duk_error(_context, DUK_ERR_ERROR, "Plugin is stopping.");
+    }
+}
+
+void Plugin::Unload()
+{
+    _metadata.Main = {};
+    _hasLoaded = false;
 }
 
 void Plugin::LoadCodeFromFile()
@@ -135,6 +161,12 @@ PluginMetadata Plugin::GetMetadata(const DukValue& dukMetadata)
         {
             metadata.TargetApiVersion = dukTargetApiVersion.as_int();
         }
+        else
+        {
+            LOG_ERROR(
+                u8"Plug-in “%s” does not specify a target API version or specifies it incorrectly. Emulating deprecated APIs.",
+                metadata.Name.c_str());
+        }
 
         auto dukAuthors = dukMetadata["authors"];
         dukAuthors.push();
@@ -160,13 +192,15 @@ PluginType Plugin::ParsePluginType(std::string_view type)
         return PluginType::Local;
     if (type == "remote")
         return PluginType::Remote;
+    if (type == "intransient")
+        return PluginType::Intransient;
     throw std::invalid_argument("Unknown plugin type.");
 }
 
 void Plugin::CheckForLicence(const DukValue& dukLicence, std::string_view pluginName)
 {
     if (dukLicence.type() != DukValue::Type::STRING || dukLicence.as_string().empty())
-        log_error("Plugin %s does not specify a licence", std::string(pluginName).c_str());
+        LOG_ERROR("Plugin %s does not specify a licence", std::string(pluginName).c_str());
 }
 
 int32_t Plugin::GetTargetAPIVersion() const
@@ -176,6 +210,11 @@ int32_t Plugin::GetTargetAPIVersion() const
 
     // If not specified, default to 33 since that is the API version from before 'targetAPIVersion' was introduced.
     return 33;
+}
+
+bool Plugin::IsTransient() const
+{
+    return _metadata.Type != PluginType::Intransient;
 }
 
 #endif

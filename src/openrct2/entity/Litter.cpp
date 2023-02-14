@@ -5,6 +5,7 @@
 #include "../core/DataSerialiser.h"
 #include "../localisation/StringIds.h"
 #include "../paint/Paint.h"
+#include "../profiling/Profiling.h"
 #include "../sprites.h"
 #include "../world/Map.h"
 #include "EntityList.h"
@@ -15,14 +16,14 @@ template<> bool EntityBase::Is<Litter>() const
     return Type == EntityType::Litter;
 }
 
-static bool isLocationLitterable(const CoordsXYZ& mapPos)
+static bool IsLocationLitterable(const CoordsXYZ& mapPos)
 {
     TileElement* tileElement;
 
-    if (!map_is_location_owned(mapPos))
+    if (!MapIsLocationOwned(mapPos))
         return false;
 
-    tileElement = map_get_first_element_at(mapPos);
+    tileElement = MapGetFirstElementAt(mapPos);
     if (tileElement == nullptr)
         return false;
     do
@@ -34,7 +35,7 @@ static bool isLocationLitterable(const CoordsXYZ& mapPos)
         if (pathZ < mapPos.z || pathZ >= mapPos.z + PATH_CLEARANCE)
             continue;
 
-        return !tile_element_is_underground(tileElement);
+        return !TileElementIsUnderground(tileElement);
     } while (!(tileElement++)->IsLastForTile());
     return false;
 }
@@ -52,7 +53,7 @@ void Litter::Create(const CoordsXYZD& litterPos, Type type)
         + CoordsXY{ CoordsDirectionDelta[litterPos.direction >> 3].x / 8,
                     CoordsDirectionDelta[litterPos.direction >> 3].y / 8 };
 
-    if (!isLocationLitterable(offsetLitterPos))
+    if (!IsLocationLitterable(offsetLitterPos))
         return;
 
     if (GetEntityListCount(EntityType::Litter) >= 500)
@@ -112,7 +113,7 @@ void Litter::RemoveAt(const CoordsXYZ& litterPos)
     }
 }
 
-static const rct_string_id litterNames[12] = {
+static const StringId litterNames[12] = {
     STR_LITTER_VOMIT,
     STR_LITTER_VOMIT,
     STR_SHOP_ITEM_SINGULAR_EMPTY_CAN,
@@ -127,7 +128,7 @@ static const rct_string_id litterNames[12] = {
     STR_SHOP_ITEM_SINGULAR_EMPTY_BOWL_BLUE,
 };
 
-rct_string_id Litter::GetName() const
+StringId Litter::GetName() const
 {
     if (EnumValue(SubType) >= std::size(litterNames))
         return STR_NONE;
@@ -169,9 +170,11 @@ static constexpr const LitterSprite _litterSprites[] = {
     { SPR_LITTER_EMPTY_BOWL_BLUE, 0x3 },
 };
 
-void Litter::Paint(paint_session& session, int32_t imageDirection) const
+void Litter::Paint(PaintSession& session, int32_t imageDirection) const
 {
-    rct_drawpixelinfo& dpi = session.DPI;
+    PROFILED_FUNCTION();
+
+    DrawPixelInfo& dpi = session.DPI;
     if (dpi.zoom_level > ZoomLevel{ 0 })
         return; // If zoomed at all no litter drawn
 
@@ -185,5 +188,5 @@ void Litter::Paint(paint_session& session, int32_t imageDirection) const
 
     // In the following call to PaintAddImageAsParent, we add 4 (instead of 2) to the
     // bound_box_offset_z to make sure litter is drawn on top of railways
-    PaintAddImageAsParent(session, image_id, { 0, 0, z }, { 4, 4, -1 }, { -4, -4, z + 4 });
+    PaintAddImageAsParent(session, ImageId(image_id), { 0, 0, z }, { { -4, -4, z + 4 }, { 5, 5, -1 } });
 }

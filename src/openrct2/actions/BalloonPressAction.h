@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,15 +9,16 @@
 
 #pragma once
 
+#include "../Identifiers.h"
 #include "GameAction.h"
 
 class BalloonPressAction final : public GameActionBase<GameCommand::BalloonPress>
 {
-    uint16_t _spriteIndex{ SPRITE_INDEX_NULL };
+    EntityId _spriteIndex{ EntityId::GetNull() };
 
 public:
     BalloonPressAction() = default;
-    BalloonPressAction(uint16_t spriteIndex);
+    BalloonPressAction(EntityId spriteIndex);
 
     void AcceptParameters(GameActionParameterVisitor& visitor) override;
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -20,7 +20,6 @@
 #include "../interface/Cursors.h"
 #include "../localisation/Language.h"
 #include "../world/Scenery.h"
-#include "../world/SmallScenery.h"
 
 #include <algorithm>
 
@@ -30,8 +29,8 @@ void SmallSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     _legacyType.flags = stream->ReadValue<uint32_t>();
     _legacyType.height = stream->ReadValue<uint8_t>();
     _legacyType.tool_id = static_cast<CursorID>(stream->ReadValue<uint8_t>());
-    _legacyType.price = stream->ReadValue<int16_t>();
-    _legacyType.removal_price = stream->ReadValue<int16_t>();
+    _legacyType.price = stream->ReadValue<int16_t>() * 10;
+    _legacyType.removal_price = stream->ReadValue<int16_t>() * 10;
     stream->Seek(4, OpenRCT2::STREAM_SEEK_CURRENT);
     _legacyType.animation_delay = stream->ReadValue<uint16_t>();
     _legacyType.animation_mask = stream->ReadValue<uint16_t>();
@@ -40,7 +39,7 @@ void SmallSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
 
     GetStringTable().Read(context, stream, ObjectStringID::NAME);
 
-    rct_object_entry sgEntry = stream->ReadValue<rct_object_entry>();
+    RCTObjectEntry sgEntry = stream->ReadValue<RCTObjectEntry>();
     SetPrimarySceneryGroup(ObjectEntryDescriptor(sgEntry));
 
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_FRAME_OFFSETS))
@@ -63,7 +62,7 @@ void SmallSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     if (_legacyType.removal_price <= 0)
     {
         // Make sure you don't make a profit when placing then removing.
-        money16 reimbursement = _legacyType.removal_price;
+        const auto reimbursement = _legacyType.removal_price;
         if (reimbursement > _legacyType.price)
         {
             context->LogError(ObjectError::InvalidProperty, "Sell price can not be more than buy price.");
@@ -74,8 +73,8 @@ void SmallSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
 void SmallSceneryObject::Load()
 {
     GetStringTable().Sort();
-    _legacyType.name = language_allocate_object_string(GetName());
-    _legacyType.image = gfx_object_allocate_images(GetImageTable().GetImages(), GetImageTable().GetCount());
+    _legacyType.name = LanguageAllocateObjectString(GetName());
+    _legacyType.image = GfxObjectAllocateImages(GetImageTable().GetImages(), GetImageTable().GetCount());
 
     _legacyType.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
 
@@ -89,14 +88,14 @@ void SmallSceneryObject::Load()
 
 void SmallSceneryObject::Unload()
 {
-    language_free_object_string(_legacyType.name);
-    gfx_object_free_images(_legacyType.image, GetImageTable().GetCount());
+    LanguageFreeObjectString(_legacyType.name);
+    GfxObjectFreeImages(_legacyType.image, GetImageTable().GetCount());
 
     _legacyType.name = 0;
     _legacyType.image = 0;
 }
 
-void SmallSceneryObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int32_t height) const
+void SmallSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
 {
     auto imageId = ImageId(_legacyType.image);
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_PRIMARY_COLOUR))
@@ -107,6 +106,10 @@ void SmallSceneryObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int3
             imageId = imageId.WithSecondary(COLOUR_YELLOW);
         }
     }
+    if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_TERTIARY_COLOUR))
+    {
+        imageId = imageId.WithSecondary(COLOUR_DARK_BROWN);
+    }
 
     auto screenCoords = ScreenCoordsXY{ width / 2, (height / 2) + (_legacyType.height / 2) };
     screenCoords.y = std::min(screenCoords.y, height - 16);
@@ -116,12 +119,12 @@ void SmallSceneryObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int3
         screenCoords.y -= 12;
     }
 
-    gfx_draw_sprite(dpi, imageId, screenCoords);
+    GfxDrawSprite(dpi, imageId, screenCoords);
 
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_GLASS))
     {
-        imageId = ImageId(_legacyType.image + 4).WithTransparancy(COLOUR_BORDEAUX_RED);
-        gfx_draw_sprite(dpi, imageId, screenCoords);
+        imageId = ImageId(_legacyType.image + 4).WithTransparency(COLOUR_BORDEAUX_RED);
+        GfxDrawSprite(dpi, imageId, screenCoords);
     }
 
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_ANIMATED_FG))
@@ -131,7 +134,7 @@ void SmallSceneryObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int3
         {
             imageId = imageId.WithSecondary(COLOUR_YELLOW);
         }
-        gfx_draw_sprite(dpi, imageId, screenCoords);
+        GfxDrawSprite(dpi, imageId, screenCoords);
     }
 }
 
@@ -163,12 +166,7 @@ void SmallSceneryObject::PerformFixes()
     }
 
     // ToonTowner's Pirate roofs. Make them show up in the Pirate Theming.
-    if (identifier == "TTPIRF02" ||
-        identifier == "TTPIRF03" ||
-        identifier == "TTPIRF04" ||
-        identifier == "TTPIRF05" ||
-        identifier == "TTPIRF07" ||
-        identifier == "TTPIRF08" ||
+    if (identifier == "TTPIRF05" ||
         identifier == "TTPRF09 " ||
         identifier == "TTPRF10 " ||
         identifier == "TTPRF11 ")
@@ -176,45 +174,12 @@ void SmallSceneryObject::PerformFixes()
         static const auto& scgPirat = GetScgPiratHeader();
         SetPrimarySceneryGroup(scgPirat);
     }
-
-    // ToonTowner's wooden roofs. Make them show up in the Mine Theming.
-    if (identifier == "TTRFWD01" ||
-        identifier == "TTRFWD02" ||
-        identifier == "TTRFWD03" ||
-        identifier == "TTRFWD04" ||
-        identifier == "TTRFWD05" ||
-        identifier == "TTRFWD06" ||
-        identifier == "TTRFWD07" ||
-        identifier == "TTRFWD08")
-    {
-        static const auto& scgMine = GetScgMineHeader();
-        SetPrimarySceneryGroup(scgMine);
-    }
-
-    // ToonTowner's glass roofs. Make them show up in the Abstract Theming.
-    if (identifier == "TTRFGL01" ||
-        identifier == "TTRFGL02" ||
-        identifier == "TTRFGL03")
-    {
-        static const auto& scgAbstr = GetScgAbstrHeader();
-        SetPrimarySceneryGroup(scgAbstr);
-    }
 }
 // clang-format on
 
 ObjectEntryDescriptor SmallSceneryObject::GetScgPiratHeader() const
 {
     return ObjectEntryDescriptor("rct2.scenery_group.scgpirat");
-}
-
-ObjectEntryDescriptor SmallSceneryObject::GetScgMineHeader() const
-{
-    return ObjectEntryDescriptor("rct2.scgmine");
-}
-
-ObjectEntryDescriptor SmallSceneryObject::GetScgAbstrHeader() const
-{
-    return ObjectEntryDescriptor("rct2.scenery_group.scgabstr");
 }
 
 void SmallSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
@@ -227,8 +192,8 @@ void SmallSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
     {
         _legacyType.height = Json::GetNumber<uint8_t>(properties["height"]);
         _legacyType.tool_id = Cursor::FromString(Json::GetString(properties["cursor"]), CursorID::StatueDown);
-        _legacyType.price = Json::GetNumber<uint16_t>(properties["price"]);
-        _legacyType.removal_price = Json::GetNumber<uint16_t>(properties["removalPrice"]);
+        _legacyType.price = Json::GetNumber<int16_t>(properties["price"]) * 10;
+        _legacyType.removal_price = Json::GetNumber<int16_t>(properties["removalPrice"]) * 10;
         _legacyType.animation_delay = Json::GetNumber<uint16_t>(properties["animationDelay"]);
         _legacyType.animation_mask = Json::GetNumber<uint16_t>(properties["animationMask"]);
         _legacyType.num_frames = Json::GetNumber<uint16_t>(properties["numFrames"]);
@@ -260,6 +225,7 @@ void SmallSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
                 { "supportsHavePrimaryColour", SMALL_SCENERY_FLAG_PAINT_SUPPORTS },
                 { "SMALL_SCENERY_FLAG27", SMALL_SCENERY_FLAG27 },
                 { "isTree", SMALL_SCENERY_FLAG_IS_TREE },
+                { "hasTertiaryColour", SMALL_SCENERY_FLAG_HAS_TERTIARY_COLOUR },
             });
 
         // Determine shape flags from a shape string

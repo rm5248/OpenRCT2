@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -17,14 +17,14 @@ class RideEntranceExitPlaceAction final : public GameActionBase<GameCommand::Pla
 private:
     CoordsXY _loc;
     Direction _direction{ INVALID_DIRECTION };
-    NetworkRideId_t _rideIndex{ RIDE_ID_NULL };
-    StationIndex _stationNum{ STATION_INDEX_NULL };
+    RideId _rideIndex{ RideId::GetNull() };
+    StationIndex _stationNum{ StationIndex::GetNull() };
     bool _isExit{};
 
 public:
     RideEntranceExitPlaceAction() = default;
     RideEntranceExitPlaceAction(
-        const CoordsXY& loc, Direction direction, ride_id_t rideIndex, StationIndex stationNum, bool isExit);
+        const CoordsXY& loc, Direction direction, RideId rideIndex, StationIndex stationNum, bool isExit);
 
     void AcceptParameters(GameActionParameterVisitor& visitor) override;
 

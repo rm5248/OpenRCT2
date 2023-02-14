@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -14,7 +14,7 @@
 #include "../core/Console.hpp"
 #include "../entity/EntityRegistry.h"
 #include "../network/network.h"
-#include "../platform/platform.h"
+#include "../platform/Platform.h"
 #include "CommandLine.hpp"
 
 #include <cstdlib>
@@ -39,7 +39,7 @@ static exitcode_t HandleSimulate(CommandLineArgEnumerator* argEnumerator)
         return EXITCODE_FAIL;
     }
 
-    core_init();
+    Platform::CoreInit();
 
     const char* inputPath = argv[0];
     uint32_t ticks = atol(argv[1]);

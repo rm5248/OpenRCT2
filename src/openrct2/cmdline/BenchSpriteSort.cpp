@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -23,7 +23,7 @@
 #    include "../interface/Viewport.h"
 #    include "../localisation/Localisation.h"
 #    include "../paint/Paint.h"
-#    include "../platform/Platform2.h"
+#    include "../platform/Platform.h"
 #    include "../util/Util.h"
 #    include "../world/Climate.h"
 #    include "../world/Map.h"
@@ -43,25 +43,25 @@ static void fixup_pointers(std::vector<RecordedPaintSession>& s)
         auto& quadrants = s[i].Session.Quadrants;
         for (size_t j = 0; j < entries.size(); j++)
         {
-            if (entries[j].AsBasic()->next_quadrant_ps == reinterpret_cast<paint_struct*>(-1))
+            if (entries[j].AsBasic()->next_quadrant_ps == reinterpret_cast<PaintStruct*>(-1))
             {
                 entries[j].AsBasic()->next_quadrant_ps = nullptr;
             }
             else
             {
-                auto nextQuadrantPs = reinterpret_cast<size_t>(entries[j].AsBasic()->next_quadrant_ps) / sizeof(paint_entry);
+                auto nextQuadrantPs = reinterpret_cast<size_t>(entries[j].AsBasic()->next_quadrant_ps) / sizeof(PaintEntry);
                 entries[j].AsBasic()->next_quadrant_ps = s[i].Entries[nextQuadrantPs].AsBasic();
             }
         }
         for (size_t j = 0; j < std::size(quadrants); j++)
         {
-            if (quadrants[j] == reinterpret_cast<paint_struct*>(-1))
+            if (quadrants[j] == reinterpret_cast<PaintStruct*>(-1))
             {
                 quadrants[j] = nullptr;
             }
             else
             {
-                auto ps = reinterpret_cast<size_t>(quadrants[j]) / sizeof(paint_entry);
+                auto ps = reinterpret_cast<size_t>(quadrants[j]) / sizeof(PaintEntry);
                 quadrants[j] = entries[ps].AsBasic();
             }
         }
@@ -70,31 +70,30 @@ static void fixup_pointers(std::vector<RecordedPaintSession>& s)
 
 static std::vector<RecordedPaintSession> extract_paint_session(std::string_view parkFileName)
 {
-    core_init();
+    Platform::CoreInit();
     gOpenRCT2Headless = true;
     auto context = OpenRCT2::CreateContext();
     std::vector<RecordedPaintSession> sessions;
-    log_info("Starting...");
+    LOG_INFO("Starting...");
     if (context->Initialise())
     {
-        drawing_engine_init();
+        DrawingEngineInit();
         if (!context->LoadParkFromFile(std::string(parkFileName)))
         {
-            log_error("Failed to load park!");
+            LOG_ERROR("Failed to load park!");
             return {};
         }
 
         gIntroState = IntroState::None;
         gScreenFlags = SCREEN_FLAGS_PLAYING;
 
-        int32_t mapSize = gMapSize;
-        int32_t resolutionWidth = (mapSize * 32 * 2);
-        int32_t resolutionHeight = (mapSize * 32 * 1);
+        int32_t resolutionWidth = (gMapSize.x * COORDS_XY_STEP * 2);
+        int32_t resolutionHeight = (gMapSize.y * COORDS_XY_STEP * 1);
 
         resolutionWidth += 8;
         resolutionHeight += 128;
 
-        rct_viewport viewport;
+        Viewport viewport;
         viewport.pos = { 0, 0 };
         viewport.width = resolutionWidth;
         viewport.height = resolutionHeight;
@@ -103,22 +102,18 @@ static std::vector<RecordedPaintSession> extract_paint_session(std::string_view 
         viewport.var_11 = 0;
         viewport.flags = 0;
 
-        int32_t customX = (gMapSize / 2) * 32 + 16;
-        int32_t customY = (gMapSize / 2) * 32 + 16;
+        auto customXY = TileCoordsXY(gMapSize.x / 2, gMapSize.y / 2).ToCoordsXY().ToTileCentre();
+        auto customXYZ = CoordsXYZ(customXY, TileElementHeight(customXY));
+        auto screenXY = Translate3DTo2DWithZ(0, customXYZ);
 
-        int32_t x = 0, y = 0;
-        int32_t z = tile_element_height({ customX, customY });
-        x = customY - customX;
-        y = ((customX + customY) / 2) - z;
-
-        viewport.viewPos = { x - ((viewport.view_width) / 2), y - ((viewport.view_height) / 2) };
+        viewport.viewPos = { screenXY.x - (viewport.view_width / 2), screenXY.y - (viewport.view_height / 2) };
         viewport.zoom = ZoomLevel{ 0 };
         gCurrentRotation = 0;
 
         // Ensure sprites appear regardless of rotation
-        reset_all_sprite_quadrant_placements();
+        ResetAllSpriteQuadrantPlacements();
 
-        rct_drawpixelinfo dpi;
+        DrawPixelInfo dpi;
         dpi.x = 0;
         dpi.y = 0;
         dpi.width = resolutionWidth;
@@ -126,17 +121,17 @@ static std::vector<RecordedPaintSession> extract_paint_session(std::string_view 
         dpi.pitch = 0;
         dpi.bits = static_cast<uint8_t*>(malloc(dpi.width * dpi.height));
 
-        log_info("Obtaining sprite data...");
-        viewport_render(&dpi, &viewport, { { 0, 0 }, { viewport.width, viewport.height } }, &sessions);
+        LOG_INFO("Obtaining sprite data...");
+        ViewportRender(&dpi, &viewport, { { 0, 0 }, { viewport.width, viewport.height } }, &sessions);
 
         free(dpi.bits);
-        drawing_engine_dispose();
+        DrawingEngineDispose();
     }
-    log_info("Got %u paint sessions.", std::size(sessions));
+    LOG_INFO("Got %u paint sessions.", std::size(sessions));
     return sessions;
 }
 
-// This function is based on benchgfx_render_screenshots
+// This function is based on BenchgfxRenderScreenshots
 static void BM_paint_session_arrange(benchmark::State& state, const std::vector<RecordedPaintSession> inputSessions)
 {
     auto sessions = inputSessions;
@@ -165,11 +160,11 @@ static int cmdline_for_bench_sprite_sort(int argc, const char** argv)
         std::vector<RecordedPaintSession> sessions(1);
         for (auto& ps : sessions[0].Entries)
         {
-            ps.AsBasic()->next_quadrant_ps = reinterpret_cast<paint_struct*>(-1);
+            ps.AsBasic()->next_quadrant_ps = reinterpret_cast<PaintStruct*>(-1);
         }
         for (auto& quad : sessions[0].Session.Quadrants)
         {
-            quad = reinterpret_cast<paint_struct*>(-1);
+            quad = reinterpret_cast<PaintStruct*>(-1);
         }
         benchmark::RegisterBenchmark("baseline", BM_paint_session_arrange, sessions);
     }
@@ -220,7 +215,7 @@ static exitcode_t HandleBenchSpriteSort(CommandLineArgEnumerator* argEnumerator)
 #else
 static exitcode_t HandleBenchSpriteSort(CommandLineArgEnumerator* argEnumerator)
 {
-    log_error("Sorry, Google benchmark not enabled in this build");
+    LOG_ERROR("Sorry, Google benchmark not enabled in this build");
     return EXITCODE_FAIL;
 }
 #endif // USE_BENCHMARK

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -10,7 +10,7 @@
 #pragma once
 
 #include "../common.h"
-#include "FileSystem.hpp"
+#include "../core/String.hpp"
 
 #include <nlohmann/json.hpp>
 #include <string>
@@ -34,8 +34,7 @@ namespace Json
      * @return A JSON representation of the file
      * @note This function will throw an exception if the JSON file cannot be parsed
      */
-    json_t ReadFromFile(const utf8* path, size_t maxSize = MAX_JSON_SIZE);
-    json_t ReadFromFile(const fs::path& path, size_t maxSize = MAX_JSON_SIZE);
+    json_t ReadFromFile(u8string_view path, size_t maxSize = MAX_JSON_SIZE);
 
     /**
      * Read JSON file and parse the contents
@@ -43,8 +42,7 @@ namespace Json
      * @param jsonData A JSON object
      * @param indentSize The number of spaces in an indent, or removes whitespace on -1
      */
-    void WriteToFile(const utf8* path, const json_t& jsonData, int indentSize = 4);
-    void WriteToFile(const fs::path& path, const json_t& jsonData, int indentSize = 4);
+    void WriteToFile(u8string_view path, const json_t& jsonData, int indentSize = 4);
 
     /**
      * Parse JSON from a string

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -20,7 +20,7 @@
 #elif defined(__APPLE__) // XCode has the header, but reports error when included.
 #    define HAVE_STD_FILESYSTEM 0
 #elif defined(__ANDROID__)
-#    define HAVE_STD_FILESYSTEM 0
+#    define HAVE_STD_FILESYSTEM 1
 #elif defined(__has_include) // For GCC/Clang check if the header exists.
 #    if __has_include(<filesystem>)
 #        define HAVE_STD_FILESYSTEM 1
@@ -57,9 +57,3 @@ namespace fs = ghc::filesystem;
 #endif
 
 #undef HAVE_STD_FILESYSTEM // Not needed any more, don't make it public.
-
-#ifdef __ANDROID__
-#    define u8path(path) fs::u8path(std::string(path))
-#else
-#    define u8path(path) fs::u8path(path)
-#endif

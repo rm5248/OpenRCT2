@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -15,34 +15,33 @@
 #include "../RideEntry.h"
 #include "../Track.h"
 #include "../TrackPaint.h"
+#include "../Vehicle.h"
 
 static void Paint3dCinemaDome(
-    paint_session& session, const Ride& ride, uint8_t direction, int8_t xOffset, int8_t yOffset, uint16_t height)
+    PaintSession& session, const Ride& ride, uint8_t direction, int8_t xOffset, int8_t yOffset, uint16_t height)
 {
-    const TileElement* savedTileElement = static_cast<const TileElement*>(session.CurrentlyDrawnItem);
-
     auto rideEntry = ride.GetRideEntry();
     if (rideEntry == nullptr)
         return;
 
-    if (ride.lifecycle_flags & RIDE_LIFECYCLE_ON_TRACK && ride.vehicles[0] != SPRITE_INDEX_NULL)
+    if (ride.lifecycle_flags & RIDE_LIFECYCLE_ON_TRACK && !ride.vehicles[0].IsNull())
     {
         session.InteractionType = ViewportInteractionItem::Entity;
-        session.CurrentlyDrawnItem = GetEntity<Vehicle>(ride.vehicles[0]);
+        session.CurrentlyDrawnEntity = GetEntity<Vehicle>(ride.vehicles[0]);
     }
 
     auto imageTemplate = ImageId(0, ride.vehicle_colours[0].Body, ride.vehicle_colours[0].Trim);
     auto imageFlags = session.TrackColours[SCHEME_MISC];
-    if (imageFlags != IMAGE_TYPE_REMAP)
+    if (imageFlags != TrackGhost)
     {
-        imageTemplate = ImageId::FromUInt32(imageFlags);
+        imageTemplate = imageFlags;
     }
 
-    auto imageId = imageTemplate.WithIndex(rideEntry->vehicles[0].base_image_id + direction);
+    auto imageId = imageTemplate.WithIndex(rideEntry->Cars[0].base_image_id + direction);
     PaintAddImageAsParent(
-        session, imageId, { xOffset, yOffset, height + 3 }, { 24, 24, 47 }, { xOffset + 16, yOffset + 16, height + 3 });
+        session, imageId, { xOffset, yOffset, height + 3 }, { { xOffset + 16, yOffset + 16, height + 3 }, { 24, 24, 47 } });
 
-    session.CurrentlyDrawnItem = savedTileElement;
+    session.CurrentlyDrawnEntity = nullptr;
     session.InteractionType = ViewportInteractionItem::Ride;
 }
 
@@ -50,20 +49,20 @@ static void Paint3dCinemaDome(
  * rct2: 0x0076574C
  */
 static void Paint3dCinema(
-    paint_session& session, const Ride& ride, uint8_t trackSequence, uint8_t direction, int32_t height,
+    PaintSession& session, const Ride& ride, uint8_t trackSequence, uint8_t direction, int32_t height,
     const TrackElement& trackElement)
 {
     trackSequence = track_map_3x3[direction][trackSequence];
 
     int32_t edges = edges_3x3[trackSequence];
 
-    wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session.TrackColours[SCHEME_MISC]);
+    WoodenASupportsPaintSetup(session, (direction & 1), 0, height, session.TrackColours[SCHEME_MISC]);
 
     const StationObject* stationObject = ride.GetStationObject();
 
-    track_paint_util_paint_floor(session, edges, session.TrackColours[SCHEME_TRACK], height, floorSpritesCork, stationObject);
+    TrackPaintUtilPaintFloor(session, edges, session.TrackColours[SCHEME_TRACK], height, floorSpritesCork, stationObject);
 
-    track_paint_util_paint_fences(
+    TrackPaintUtilPaintFences(
         session, edges, session.MapPosition, trackElement, ride, session.TrackColours[SCHEME_MISC], height, fenceSpritesRope,
         session.CurrentRotation);
 
@@ -110,12 +109,12 @@ static void Paint3dCinema(
             break;
     }
 
-    paint_util_set_segment_support_height(session, cornerSegments, height + 2, 0x20);
-    paint_util_set_segment_support_height(session, SEGMENTS_ALL & ~cornerSegments, 0xFFFF, 0);
-    paint_util_set_general_support_height(session, height + 128, 0x20);
+    PaintUtilSetSegmentSupportHeight(session, cornerSegments, height + 2, 0x20);
+    PaintUtilSetSegmentSupportHeight(session, SEGMENTS_ALL & ~cornerSegments, 0xFFFF, 0);
+    PaintUtilSetGeneralSupportHeight(session, height + 128, 0x20);
 }
 
-TRACK_PAINT_FUNCTION get_track_paint_function_3d_cinema(int32_t trackType)
+TRACK_PAINT_FUNCTION GetTrackPaintFunction3dCinema(int32_t trackType)
 {
     if (trackType != TrackElemType::FlatTrack3x3)
     {

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -22,7 +22,7 @@
 #    include "../core/FileScanner.h"
 #    include "../core/Path.hpp"
 #    include "../interface/InteractiveConsole.h"
-#    include "../platform/Platform2.h"
+#    include "../platform/Platform.h"
 #    include "Duktape.hpp"
 #    include "bindings/entity/ScEntity.hpp"
 #    include "bindings/entity/ScGuest.hpp"
@@ -52,7 +52,9 @@
 #    include "bindings/world/ScTileElement.hpp"
 
 #    include <iostream>
+#    include <memory>
 #    include <stdexcept>
+#    include <string>
 
 using namespace OpenRCT2;
 using namespace OpenRCT2::Scripting;
@@ -386,6 +388,9 @@ ScriptEngine::ScriptEngine(InteractiveConsole& console, IPlatformEnvironment& en
 
 void ScriptEngine::Initialise()
 {
+    if (_initialised)
+        throw std::runtime_error("Script engine already initialised.");
+
     auto ctx = static_cast<duk_context*>(_context);
     ScCheats::Register(ctx);
     ScClimate::Register(ctx);
@@ -410,17 +415,21 @@ void ScriptEngine::Initialise()
     ScRideObjectVehicle::Register(ctx);
     ScTile::Register(ctx);
     ScTileElement::Register(ctx);
+    ScTrackIterator::Register(ctx);
+    ScTrackSegment::Register(ctx);
     ScEntity::Register(ctx);
     ScLitter::Register(ctx);
     ScVehicle::Register(ctx);
     ScPeep::Register(ctx);
     ScGuest::Register(ctx);
+    ScThought::Register(ctx);
 #    ifndef DISABLE_NETWORK
     ScSocket::Register(ctx);
     ScListener::Register(ctx);
 #    endif
     ScScenario::Register(ctx);
     ScScenarioObjective::Register(ctx);
+    ScPatrolArea::Register(ctx);
     ScStaff::Register(ctx);
 
     dukglue_register_global(ctx, std::make_shared<ScCheats>(), "cheats");
@@ -434,45 +443,237 @@ void ScriptEngine::Initialise()
     dukglue_register_global(ctx, std::make_shared<ScProfiler>(ctx), "profiler");
     dukglue_register_global(ctx, std::make_shared<ScScenario>(), "scenario");
 
-    _initialised = true;
-    _pluginsLoaded = false;
-    _pluginsStarted = false;
+    RegisterConstants();
 
-    InitSharedStorage();
+    _initialised = true;
+    _transientPluginsEnabled = false;
+    _transientPluginsStarted = false;
+
+    LoadSharedStorage();
+    ClearParkStorage();
 }
 
-void ScriptEngine::LoadPlugins()
+class ConstantBuilder
 {
-    if (!_initialised)
+private:
+    duk_context* _ctx;
+    DukValue _obj;
+
+public:
+    ConstantBuilder(duk_context* ctx)
+        : _ctx(ctx)
     {
-        Initialise();
-    }
-    if (_pluginsLoaded)
-    {
-        UnloadPlugins();
+        duk_push_global_object(_ctx);
+        _obj = DukValue::take_from_stack(_ctx);
     }
 
+    ConstantBuilder& Namespace(std::string_view ns)
+    {
+        auto flags = DUK_DEFPROP_ENUMERABLE | DUK_DEFPROP_HAVE_WRITABLE | DUK_DEFPROP_HAVE_ENUMERABLE
+            | DUK_DEFPROP_HAVE_CONFIGURABLE | DUK_DEFPROP_HAVE_VALUE;
+
+        // Create a new object for namespace
+        duk_push_global_object(_ctx);
+        duk_push_lstring(_ctx, ns.data(), ns.size());
+        duk_push_object(_ctx);
+
+        // Keep a reference to the namespace object
+        duk_dup_top(_ctx);
+        _obj = DukValue::take_from_stack(_ctx);
+
+        // Place the namespace object into the global context
+        duk_def_prop(_ctx, -3, flags);
+        duk_pop(_ctx);
+
+        return *this;
+    }
+
+    ConstantBuilder& Constant(std::string_view name, int32_t value)
+    {
+        auto flags = DUK_DEFPROP_ENUMERABLE | DUK_DEFPROP_HAVE_WRITABLE | DUK_DEFPROP_HAVE_ENUMERABLE
+            | DUK_DEFPROP_HAVE_CONFIGURABLE | DUK_DEFPROP_HAVE_VALUE;
+        _obj.push();
+        duk_push_lstring(_ctx, name.data(), name.size());
+        duk_push_int(_ctx, value);
+        duk_def_prop(_ctx, -3, flags);
+        duk_pop(_ctx);
+        return *this;
+    }
+};
+
+void ScriptEngine::RegisterConstants()
+{
+    ConstantBuilder builder(_context);
+    builder.Namespace("TrackSlope")
+        .Constant("None", TRACK_SLOPE_NONE)
+        .Constant("Up25", TRACK_SLOPE_UP_25)
+        .Constant("Up60", TRACK_SLOPE_UP_60)
+        .Constant("Down25", TRACK_SLOPE_DOWN_25)
+        .Constant("Down60", TRACK_SLOPE_DOWN_60)
+        .Constant("Up90", TRACK_SLOPE_UP_90)
+        .Constant("Down90", TRACK_SLOPE_DOWN_90);
+    builder.Namespace("TrackBanking")
+        .Constant("None", TRACK_BANK_NONE)
+        .Constant("BankLeft", TRACK_BANK_LEFT)
+        .Constant("BankRight", TRACK_BANK_RIGHT)
+        .Constant("UpsideDown", TRACK_BANK_UPSIDE_DOWN);
+}
+
+void ScriptEngine::RefreshPlugins()
+{
+    // Get a list of removed and added plugin files
+    auto pluginFiles = GetPluginFiles();
+    std::vector<std::string> plugins;
+    std::vector<std::string> removedPlugins;
+    std::vector<std::string> addedPlugins;
+    for (const auto& plugin : _plugins)
+    {
+        if (plugin->HasPath())
+        {
+            plugins.emplace_back(plugin->GetPath());
+        }
+    }
+
+    // The lists need to be sorted for std::set_difference to work properly
+    std::sort(pluginFiles.begin(), pluginFiles.end());
+    std::sort(plugins.begin(), plugins.end());
+
+    std::set_difference(
+        plugins.begin(), plugins.end(), pluginFiles.begin(), pluginFiles.end(), std::back_inserter(removedPlugins));
+    std::set_difference(
+        pluginFiles.begin(), pluginFiles.end(), plugins.begin(), plugins.end(), std::back_inserter(addedPlugins));
+
+    // Unregister plugin files that were removed
+    for (const auto& plugin : removedPlugins)
+    {
+        UnregisterPlugin(plugin);
+    }
+
+    // Register plugin files that were added
+    for (const auto& plugin : addedPlugins)
+    {
+        RegisterPlugin(plugin);
+    }
+
+    // Turn on hot reload if not already enabled
+    if (!_hotReloadingInitialised && gConfigPlugin.EnableHotReloading && NetworkGetMode() == NETWORK_MODE_NONE)
+    {
+        SetupHotReloading();
+    }
+}
+
+std::vector<std::string> ScriptEngine::GetPluginFiles() const
+{
+    // Scan for .js files in plugin directory
+    std::vector<std::string> pluginFiles;
     auto base = _env.GetDirectoryPath(DIRBASE::USER, DIRID::PLUGIN);
     if (Path::DirectoryExists(base))
     {
-        auto pattern = Path::Combine(base, "*.js");
+        auto pattern = Path::Combine(base, u8"*.js");
         auto scanner = Path::ScanDirectory(pattern, true);
         while (scanner->Next())
         {
             auto path = std::string(scanner->GetPath());
             if (ShouldLoadScript(path))
             {
-                LoadPlugin(path);
+                pluginFiles.push_back(path);
             }
         }
+    }
+    return pluginFiles;
+}
 
-        if (gConfigPlugin.enable_hot_reloading && network_get_mode() == NETWORK_MODE_NONE)
+bool ScriptEngine::ShouldLoadScript(std::string_view path)
+{
+    // A lot of JavaScript is often found in a node_modules directory tree and is most likely unwanted, so ignore it
+    return path.find("/node_modules/") == std::string_view::npos && path.find("\\node_modules\\") == std::string_view::npos;
+}
+
+void ScriptEngine::UnregisterPlugin(std::string_view path)
+{
+    try
+    {
+        auto pluginIt = std::find_if(_plugins.begin(), _plugins.end(), [path](const std::shared_ptr<Plugin>& plugin) {
+            return plugin->GetPath() == path;
+        });
+        auto& plugin = *pluginIt;
+
+        StopPlugin(plugin);
+        UnloadPlugin(plugin);
+        LogPluginInfo(plugin, "Unregistered");
+
+        _plugins.erase(pluginIt);
+    }
+    catch (const std::exception& e)
+    {
+        _console.WriteLineError(e.what());
+    }
+}
+
+void ScriptEngine::RegisterPlugin(std::string_view path)
+{
+    try
+    {
+        auto plugin = std::make_shared<Plugin>(_context, path);
+
+        // We must load the plugin to get the metadata for it
+        ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
+        plugin->Load();
+
+        // Unload the plugin now, metadata is kept
+        plugin->Unload();
+
+        LogPluginInfo(plugin, "Registered");
+        _plugins.push_back(std::move(plugin));
+    }
+    catch (const std::exception& e)
+    {
+        _console.WriteLineError(e.what());
+    }
+}
+
+void ScriptEngine::StartIntransientPlugins()
+{
+    LoadSharedStorage();
+
+    for (auto& plugin : _plugins)
+    {
+        if (!plugin->HasStarted() && !plugin->IsTransient())
         {
-            SetupHotReloading();
+            LoadPlugin(plugin);
+            StartPlugin(plugin);
         }
     }
-    _pluginsLoaded = true;
-    _pluginsStarted = false;
+
+    _intransientPluginsStarted = true;
+}
+
+void ScriptEngine::StopUnloadRegisterAllPlugins()
+{
+    std::vector<std::string> pluginPaths;
+    for (auto& plugin : _plugins)
+    {
+        pluginPaths.emplace_back(plugin->GetPath());
+        StopPlugin(plugin);
+    }
+    for (auto& plugin : _plugins)
+    {
+        UnloadPlugin(plugin);
+    }
+    for (auto& pluginPath : pluginPaths)
+    {
+        UnregisterPlugin(pluginPath);
+    }
+}
+
+void ScriptEngine::LoadTransientPlugins()
+{
+    if (!_initialised)
+    {
+        Initialise();
+        RefreshPlugins();
+    }
+    _transientPluginsEnabled = true;
 }
 
 void ScriptEngine::LoadPlugin(const std::string& path)
@@ -485,18 +686,19 @@ void ScriptEngine::LoadPlugin(std::shared_ptr<Plugin>& plugin)
 {
     try
     {
-        ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
-        plugin->Load();
-
-        auto metadata = plugin->GetMetadata();
-        if (metadata.MinApiVersion <= OPENRCT2_PLUGIN_API_VERSION)
+        if (!plugin->IsLoaded())
         {
-            LogPluginInfo(plugin, "Loaded");
-            _plugins.push_back(std::move(plugin));
-        }
-        else
-        {
-            LogPluginInfo(plugin, "Requires newer API version: v" + std::to_string(metadata.MinApiVersion));
+            const auto& metadata = plugin->GetMetadata();
+            if (metadata.MinApiVersion <= OPENRCT2_PLUGIN_API_VERSION)
+            {
+                ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
+                plugin->Load();
+                LogPluginInfo(plugin, "Loaded");
+            }
+            else
+            {
+                LogPluginInfo(plugin, "Requires newer API version: v" + std::to_string(metadata.MinApiVersion));
+            }
         }
     }
     catch (const std::exception& e)
@@ -505,23 +707,24 @@ void ScriptEngine::LoadPlugin(std::shared_ptr<Plugin>& plugin)
     }
 }
 
-void ScriptEngine::StopPlugin(std::shared_ptr<Plugin> plugin)
+void ScriptEngine::UnloadPlugin(std::shared_ptr<Plugin>& plugin)
 {
-    if (plugin->HasStarted())
+    if (plugin->IsLoaded())
     {
-        RemoveCustomGameActions(plugin);
-        RemoveIntervals(plugin);
-        RemoveSockets(plugin);
-        _hookEngine.UnsubscribeAll(plugin);
-        for (const auto& callback : _pluginStoppedSubscriptions)
-        {
-            callback(plugin);
-        }
+        plugin->Unload();
+        LogPluginInfo(plugin, "Unloaded");
+    }
+}
 
+void ScriptEngine::StartPlugin(std::shared_ptr<Plugin> plugin)
+{
+    if (!plugin->HasStarted() && ShouldStartPlugin(plugin))
+    {
         ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
         try
         {
-            plugin->Stop();
+            LogPluginInfo(plugin, "Started");
+            plugin->Start();
         }
         catch (const std::exception& e)
         {
@@ -530,10 +733,35 @@ void ScriptEngine::StopPlugin(std::shared_ptr<Plugin> plugin)
     }
 }
 
-bool ScriptEngine::ShouldLoadScript(const std::string& path)
+void ScriptEngine::StopPlugin(std::shared_ptr<Plugin> plugin)
 {
-    // A lot of JavaScript is often found in a node_modules directory tree and is most likely unwanted, so ignore it
-    return path.find("/node_modules/") == std::string::npos && path.find("\\node_modules\\") == std::string::npos;
+    if (plugin->HasStarted())
+    {
+        plugin->StopBegin();
+
+        for (const auto& callback : _pluginStoppedSubscriptions)
+        {
+            callback(plugin);
+        }
+        RemoveCustomGameActions(plugin);
+        RemoveIntervals(plugin);
+        RemoveSockets(plugin);
+        _hookEngine.UnsubscribeAll(plugin);
+
+        plugin->StopEnd();
+        LogPluginInfo(plugin, "Stopped");
+    }
+}
+
+void ScriptEngine::ReloadPlugin(std::shared_ptr<Plugin> plugin)
+{
+    StopPlugin(plugin);
+    {
+        ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
+        plugin->Load();
+        LogPluginInfo(plugin, "Reloaded");
+    }
+    StartPlugin(plugin);
 }
 
 void ScriptEngine::SetupHotReloading()
@@ -541,11 +769,15 @@ void ScriptEngine::SetupHotReloading()
     try
     {
         auto base = _env.GetDirectoryPath(DIRBASE::USER, DIRID::PLUGIN);
-        _pluginFileWatcher = std::make_unique<FileWatcher>(base);
-        _pluginFileWatcher->OnFileChanged = [this](const std::string& path) {
-            std::lock_guard<std::mutex> guard(_changedPluginFilesMutex);
-            _changedPluginFiles.emplace(path);
-        };
+        if (Path::DirectoryExists(base))
+        {
+            _pluginFileWatcher = std::make_unique<FileWatcher>(base);
+            _pluginFileWatcher->OnFileChanged = [this](u8string_view path) {
+                std::lock_guard guard(_changedPluginFilesMutex);
+                _changedPluginFiles.emplace(path);
+            };
+            _hotReloadingInitialised = true;
+        }
     }
     catch (const std::exception& e)
     {
@@ -553,12 +785,25 @@ void ScriptEngine::SetupHotReloading()
     }
 }
 
+void ScriptEngine::DoAutoReloadPluginCheck()
+{
+    if (_hotReloadingInitialised)
+    {
+        auto tick = Platform::GetTicks();
+        if (tick - _lastHotReloadCheckTick > 1000)
+        {
+            AutoReloadPlugins();
+            _lastHotReloadCheckTick = tick;
+        }
+    }
+}
+
 void ScriptEngine::AutoReloadPlugins()
 {
-    if (_changedPluginFiles.size() > 0)
+    if (!_changedPluginFiles.empty())
     {
-        std::lock_guard<std::mutex> guard(_changedPluginFilesMutex);
-        for (auto& path : _changedPluginFiles)
+        std::lock_guard guard(_changedPluginFilesMutex);
+        for (const auto& path : _changedPluginFiles)
         {
             auto findResult = std::find_if(_plugins.begin(), _plugins.end(), [&path](const std::shared_ptr<Plugin>& plugin) {
                 return Path::Equals(path, plugin->GetPath());
@@ -568,12 +813,7 @@ void ScriptEngine::AutoReloadPlugins()
                 auto& plugin = *findResult;
                 try
                 {
-                    StopPlugin(plugin);
-
-                    ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
-                    plugin->Load();
-                    LogPluginInfo(plugin, "Reloaded");
-                    plugin->Start();
+                    ReloadPlugin(plugin);
                 }
                 catch (const std::exception& e)
                 {
@@ -585,44 +825,58 @@ void ScriptEngine::AutoReloadPlugins()
     }
 }
 
-void ScriptEngine::UnloadPlugins()
+void ScriptEngine::UnloadTransientPlugins()
 {
-    StopPlugins();
+    // Stop them all first
     for (auto& plugin : _plugins)
     {
-        LogPluginInfo(plugin, "Unloaded");
+        if (plugin->IsTransient())
+        {
+            StopPlugin(plugin);
+        }
     }
-    _plugins.clear();
-    _pluginsLoaded = false;
-    _pluginsStarted = false;
+
+    // Now unload them
+    for (auto& plugin : _plugins)
+    {
+        if (plugin->IsTransient())
+        {
+            UnloadPlugin(plugin);
+        }
+    }
+
+    _transientPluginsEnabled = false;
+    _transientPluginsStarted = false;
 }
 
-void ScriptEngine::StartPlugins()
+void ScriptEngine::StartTransientPlugins()
 {
     LoadSharedStorage();
 
+    // Load transient plugins
     for (auto& plugin : _plugins)
     {
-        if (!plugin->HasStarted() && ShouldStartPlugin(plugin))
+        if (plugin->IsTransient() && !plugin->IsLoaded() && ShouldStartPlugin(plugin))
         {
-            ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, false);
-            try
-            {
-                LogPluginInfo(plugin, "Started");
-                plugin->Start();
-            }
-            catch (const std::exception& e)
-            {
-                _console.WriteLineError(e.what());
-            }
+            LoadPlugin(plugin);
         }
     }
-    _pluginsStarted = true;
+
+    // Start transient plugins
+    for (auto& plugin : _plugins)
+    {
+        if (plugin->IsTransient() && plugin->IsLoaded() && !plugin->HasStarted())
+        {
+            StartPlugin(plugin);
+        }
+    }
+
+    _transientPluginsStarted = true;
 }
 
 bool ScriptEngine::ShouldStartPlugin(const std::shared_ptr<Plugin>& plugin)
 {
-    auto networkMode = network_get_mode();
+    auto networkMode = NetworkGetMode();
     if (networkMode == NETWORK_MODE_CLIENT)
     {
         // Only client plugins and plugins downloaded from server should be started
@@ -636,48 +890,34 @@ bool ScriptEngine::ShouldStartPlugin(const std::shared_ptr<Plugin>& plugin)
     return true;
 }
 
-void ScriptEngine::StopPlugins()
-{
-    for (auto& plugin : _plugins)
-    {
-        if (plugin->HasStarted())
-        {
-            StopPlugin(plugin);
-            LogPluginInfo(plugin, "Stopped");
-        }
-    }
-    _pluginsStarted = false;
-}
-
 void ScriptEngine::Tick()
 {
     PROFILED_FUNCTION();
 
-    if (!_initialised)
-    {
-        Initialise();
-    }
-
-    if (_pluginsLoaded)
-    {
-        if (!_pluginsStarted)
-        {
-            StartPlugins();
-        }
-        else
-        {
-            auto tick = Platform::GetTicks();
-            if (tick - _lastHotReloadCheckTick > 1000)
-            {
-                AutoReloadPlugins();
-                _lastHotReloadCheckTick = tick;
-            }
-        }
-    }
-
+    CheckAndStartPlugins();
     UpdateIntervals();
     UpdateSockets();
     ProcessREPL();
+    DoAutoReloadPluginCheck();
+}
+
+void ScriptEngine::CheckAndStartPlugins()
+{
+    auto startIntransient = !_intransientPluginsStarted;
+    auto startTransient = !_transientPluginsStarted && _transientPluginsEnabled;
+
+    if (startIntransient || startTransient)
+    {
+        RefreshPlugins();
+    }
+    if (startIntransient)
+    {
+        StartIntransientPlugins();
+    }
+    if (startTransient)
+    {
+        StartTransientPlugins();
+    }
 }
 
 void ScriptEngine::ProcessREPL()
@@ -720,12 +960,13 @@ DukValue ScriptEngine::ExecutePluginCall(
     return ExecutePluginCall(plugin, func, dukUndefined, args, isGameStateMutable);
 }
 
+// Must pass plugin by-value, a JS function could destroy the original reference
 DukValue ScriptEngine::ExecutePluginCall(
-    const std::shared_ptr<Plugin>& plugin, const DukValue& func, const DukValue& thisValue, const std::vector<DukValue>& args,
+    std::shared_ptr<Plugin> plugin, const DukValue& func, const DukValue& thisValue, const std::vector<DukValue>& args,
     bool isGameStateMutable)
 {
     DukStackFrame frame(_context);
-    if (func.is_function())
+    if (func.is_function() && plugin->HasStarted())
     {
         ScriptExecutionInfo::PluginScope scope(_execInfo, plugin, isGameStateMutable);
         func.push();
@@ -747,6 +988,12 @@ DukValue ScriptEngine::ExecutePluginCall(
     return DukValue();
 }
 
+void ScriptEngine::LogPluginInfo(std::string_view message)
+{
+    auto plugin = _execInfo.GetCurrentPlugin();
+    LogPluginInfo(plugin, message);
+}
+
 void ScriptEngine::LogPluginInfo(const std::shared_ptr<Plugin>& plugin, std::string_view message)
 {
     if (plugin == nullptr)
@@ -764,19 +1011,40 @@ void ScriptEngine::AddNetworkPlugin(std::string_view code)
 {
     auto plugin = std::make_shared<Plugin>(_context, std::string());
     plugin->SetCode(code);
-    LoadPlugin(plugin);
+    _plugins.push_back(plugin);
 }
 
-GameActions::Result ScriptEngine::QueryOrExecuteCustomGameAction(std::string_view id, std::string_view args, bool isExecute)
+void ScriptEngine::RemoveNetworkPlugins()
 {
-    std::string actionz = std::string(id);
+    auto it = _plugins.begin();
+    while (it != _plugins.end())
+    {
+        auto plugin = (*it);
+        if (!plugin->HasPath())
+        {
+            StopPlugin(plugin);
+            UnloadPlugin(plugin);
+            LogPluginInfo(plugin, "Unregistered network plugin");
+
+            it = _plugins.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
+}
+
+GameActions::Result ScriptEngine::QueryOrExecuteCustomGameAction(const CustomAction& customAction, bool isExecute)
+{
+    std::string actionz = customAction.GetId();
     auto kvp = _customActions.find(actionz);
     if (kvp != _customActions.end())
     {
-        const auto& customAction = kvp->second;
+        const auto& customActionInfo = kvp->second;
 
         // Deserialise the JSON args
-        std::string argsz(args);
+        std::string argsz = customAction.GetJson();
 
         auto dukArgs = DuktapeTryParseJson(_context, argsz);
         if (!dukArgs)
@@ -787,15 +1055,33 @@ GameActions::Result ScriptEngine::QueryOrExecuteCustomGameAction(std::string_vie
             return action;
         }
 
+        std::vector<DukValue> pluginCallArgs;
+        if (GetTargetAPIVersion() <= API_VERSION_68_CUSTOM_ACTION_ARGS)
+        {
+            pluginCallArgs = { *dukArgs };
+        }
+        else
+        {
+            DukObject obj(_context);
+            obj.Set("action", actionz);
+            obj.Set("args", *dukArgs);
+            obj.Set("player", customAction.GetPlayer());
+            obj.Set("type", EnumValue(customAction.GetType()));
+
+            auto flags = customAction.GetActionFlags();
+            obj.Set("isClientOnly", (flags & GameActions::Flags::ClientOnly) != 0);
+            pluginCallArgs = { obj.Take() };
+        }
+
         // Ready to call plugin handler
         DukValue dukResult;
         if (!isExecute)
         {
-            dukResult = ExecutePluginCall(customAction.Owner, customAction.Query, { *dukArgs }, false);
+            dukResult = ExecutePluginCall(customActionInfo.Owner, customActionInfo.Query, pluginCallArgs, false);
         }
         else
         {
-            dukResult = ExecutePluginCall(customAction.Owner, customAction.Execute, { *dukArgs }, true);
+            dukResult = ExecutePluginCall(customActionInfo.Owner, customActionInfo.Execute, pluginCallArgs, true);
         }
         return DukToGameActionResult(dukResult);
     }
@@ -868,11 +1154,13 @@ DukValue ScriptEngine::GameActionResultToDuk(const GameAction& action, const Gam
     DukStackFrame frame(_context);
     DukObject obj(_context);
 
-    auto player = action.GetPlayer();
-    if (player != -1)
+    obj.Set("error", static_cast<duk_int_t>(result.Error));
+    if (result.Error != GameActions::Status::Ok)
     {
-        obj.Set("player", action.GetPlayer());
+        obj.Set("errorTitle", result.GetErrorTitle());
+        obj.Set("errorMessage", result.GetErrorMessage());
     }
+
     if (result.Cost != MONEY32_UNDEFINED)
     {
         obj.Set("cost", result.Cost);
@@ -881,28 +1169,29 @@ DukValue ScriptEngine::GameActionResultToDuk(const GameAction& action, const Gam
     {
         obj.Set("position", ToDuk(_context, result.Position));
     }
-
     if (result.Expenditure != ExpenditureType::Count)
     {
         obj.Set("expenditureType", ExpenditureTypeToString(result.Expenditure));
     }
 
+    // RideCreateAction only
     if (action.GetType() == GameCommand::CreateRide)
     {
         if (result.Error == GameActions::Status::Ok)
         {
-            const auto rideIndex = result.GetData<ride_id_t>();
-            obj.Set("ride", EnumValue(rideIndex));
+            const auto rideIndex = result.GetData<RideId>();
+            obj.Set("ride", rideIndex.ToUnderlying());
         }
     }
+    // StaffHireNewAction only
     else if (action.GetType() == GameCommand::HireNewStaffMember)
     {
         if (result.Error == GameActions::Status::Ok)
         {
             const auto actionResult = result.GetData<StaffHireNewActionResult>();
-            if (actionResult.StaffEntityId != SPRITE_INDEX_NULL)
+            if (!actionResult.StaffEntityId.IsNull())
             {
-                obj.Set("peep", actionResult.StaffEntityId);
+                obj.Set("peep", actionResult.StaffEntityId.ToUnderlying());
             }
         }
     }
@@ -1011,7 +1300,7 @@ const static EnumMap<GameCommand> ActionNameToType = {
     { "clearscenery", GameCommand::ClearScenery },
     { "climateset", GameCommand::SetClimate },
     { "footpathplace", GameCommand::PlacePath },
-    { "footpathplacefromtrack", GameCommand::PlacePathFromTrack },
+    { "footpathlayoutplace", GameCommand::PlacePathLayout },
     { "footpathremove", GameCommand::RemovePath },
     { "footpathadditionplace", GameCommand::PlaceFootpathAddition },
     { "footpathadditionremove", GameCommand::RemoveFootpathAddition },
@@ -1022,45 +1311,48 @@ const static EnumMap<GameCommand> ActionNameToType = {
     { "landraise", GameCommand::RaiseLand },
     { "landsetheight", GameCommand::SetLandHeight },
     { "landsetrights", GameCommand::SetLandOwnership },
-    { "landsmoothaction", GameCommand::EditLandSmooth },
+    { "landsmooth", GameCommand::EditLandSmooth },
     { "largesceneryplace", GameCommand::PlaceLargeScenery },
     { "largesceneryremove", GameCommand::RemoveLargeScenery },
-    { "largescenerysetcolour", GameCommand::SetSceneryColour },
+    { "largescenerysetcolour", GameCommand::SetLargeSceneryColour },
     { "loadorquit", GameCommand::LoadOrQuit },
+    { "mapchangesize", GameCommand::ChangeMapSize },
     { "mazeplacetrack", GameCommand::PlaceMazeDesign },
     { "mazesettrack", GameCommand::SetMazeTrack },
     { "networkmodifygroup", GameCommand::ModifyGroups },
+    { "parkentranceplace", GameCommand::PlaceParkEntrance },
     { "parkentranceremove", GameCommand::RemoveParkEntrance },
     { "parkmarketing", GameCommand::StartMarketingCampaign },
     { "parksetdate", GameCommand::SetDate },
+    { "parksetentrancefee", GameCommand::SetParkEntranceFee },
     { "parksetloan", GameCommand::SetCurrentLoan },
     { "parksetname", GameCommand::SetParkName },
     { "parksetparameter", GameCommand::SetParkOpen },
     { "parksetresearchfunding", GameCommand::SetResearchFunding },
     { "pausetoggle", GameCommand::TogglePause },
     { "peeppickup", GameCommand::PickupGuest },
-    { "placeparkentrance", GameCommand::PlaceParkEntrance },
-    { "placepeepspawn", GameCommand::PlacePeepSpawn },
+    { "peepspawnplace", GameCommand::PlacePeepSpawn },
     { "playerkick", GameCommand::KickPlayer },
     { "playersetgroup", GameCommand::SetPlayerGroup },
     { "ridecreate", GameCommand::CreateRide },
     { "ridedemolish", GameCommand::DemolishRide },
     { "rideentranceexitplace", GameCommand::PlaceRideEntranceOrExit },
     { "rideentranceexitremove", GameCommand::RemoveRideEntranceOrExit },
+    { "ridefreezerating", GameCommand::FreezeRideRating },
     { "ridesetappearance", GameCommand::SetRideAppearance },
     { "ridesetcolourscheme", GameCommand::SetColourScheme },
     { "ridesetname", GameCommand::SetRideName },
     { "ridesetprice", GameCommand::SetRidePrice },
     { "ridesetsetting", GameCommand::SetRideSetting },
     { "ridesetstatus", GameCommand::SetRideStatus },
-    { "ridesetvehicles", GameCommand::SetRideVehicles },
+    { "ridesetvehicle", GameCommand::SetRideVehicles },
     { "scenariosetsetting", GameCommand::EditScenarioOptions },
-    { "setcheataction", GameCommand::Cheat },
-    { "setparkentrancefee", GameCommand::SetParkEntranceFee },
+    { "setcheat", GameCommand::Cheat },
     { "signsetname", GameCommand::SetSignName },
     { "signsetstyle", GameCommand::SetSignStyle },
     { "smallsceneryplace", GameCommand::PlaceScenery },
     { "smallsceneryremove", GameCommand::RemoveScenery },
+    { "smallscenerysetcolour", GameCommand::SetSceneryColour},
     { "stafffire", GameCommand::FireStaffMember },
     { "staffhire", GameCommand::HireNewStaffMember },
     { "staffsetcolour", GameCommand::SetStaffColour },
@@ -1200,7 +1492,13 @@ std::unique_ptr<GameAction> ScriptEngine::CreateGameAction(const std::string& ac
     auto jsonz = duk_json_encode(ctx, -1);
     auto json = std::string(jsonz);
     duk_pop(ctx);
-    return std::make_unique<CustomAction>(actionid, json);
+    auto customAction = std::make_unique<CustomAction>(actionid, json);
+
+    if (customAction->GetPlayer() == -1 && NetworkGetMode() != NETWORK_MODE_NONE)
+    {
+        customAction->SetPlayer(NetworkGetCurrentPlayerId());
+    }
+    return customAction;
 }
 
 void ScriptEngine::InitSharedStorage()
@@ -1250,6 +1548,29 @@ void ScriptEngine::SaveSharedStorage()
     }
 }
 
+void ScriptEngine::ClearParkStorage()
+{
+    duk_push_object(_context);
+    _parkStorage = std::move(DukValue::take_from_stack(_context));
+}
+
+std::string ScriptEngine::GetParkStorageAsJSON()
+{
+    _parkStorage.push();
+    auto json = std::string(duk_json_encode(_context, -1));
+    duk_pop(_context);
+    return json;
+}
+
+void ScriptEngine::SetParkStorageFromJSON(std::string_view value)
+{
+    auto result = DuktapeTryParseJson(_context, value);
+    if (result)
+    {
+        _parkStorage = std::move(*result);
+    }
+}
+
 IntervalHandle ScriptEngine::AllocateHandle()
 {
     for (size_t i = 0; i < _intervals.size(); i++)
@@ -1295,7 +1616,7 @@ void ScriptEngine::RemoveInterval(const std::shared_ptr<Plugin>& plugin, Interva
 
 void ScriptEngine::UpdateIntervals()
 {
-    uint32_t timestamp = platform_get_ticks();
+    uint32_t timestamp = Platform::GetTicks();
     if (timestamp < _lastIntervalTimestamp)
     {
         // timestamp has wrapped, subtract all intervals by the remaining amount before wrap
@@ -1402,7 +1723,7 @@ std::string OpenRCT2::Scripting::ProcessString(const DukValue& value)
 bool OpenRCT2::Scripting::IsGameStateMutable()
 {
     // Allow single player to alter game state anywhere
-    if (network_get_mode() == NETWORK_MODE_NONE)
+    if (NetworkGetMode() == NETWORK_MODE_NONE)
     {
         return true;
     }
@@ -1415,7 +1736,7 @@ bool OpenRCT2::Scripting::IsGameStateMutable()
 void OpenRCT2::Scripting::ThrowIfGameStateNotMutable()
 {
     // Allow single player to alter game state anywhere
-    if (network_get_mode() != NETWORK_MODE_NONE)
+    if (NetworkGetMode() != NETWORK_MODE_NONE)
     {
         auto& scriptEngine = GetContext()->GetScriptEngine();
         auto& execInfo = scriptEngine.GetExecInfo();
@@ -1441,6 +1762,11 @@ int32_t OpenRCT2::Scripting::GetTargetAPIVersion()
     }
 
     return plugin->GetTargetAPIVersion();
+}
+
+duk_bool_t duk_exec_timeout_check(void*)
+{
+    return false;
 }
 
 #endif

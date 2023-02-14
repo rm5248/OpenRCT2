@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -24,13 +24,41 @@
 #include <algorithm>
 #include <iterator>
 
+static RCTLargeSceneryText ReadLegacy3DFont(OpenRCT2::IStream& stream)
+{
+    RCTLargeSceneryText _3dFontLegacy = {};
+    _3dFontLegacy.offset[0].x = stream.ReadValue<int16_t>();
+    _3dFontLegacy.offset[0].y = stream.ReadValue<int16_t>();
+    _3dFontLegacy.offset[1].x = stream.ReadValue<int16_t>();
+    _3dFontLegacy.offset[1].y = stream.ReadValue<int16_t>();
+    _3dFontLegacy.max_width = stream.ReadValue<uint16_t>();
+    stream.ReadValue<uint16_t>();
+    _3dFontLegacy.flags = stream.ReadValue<uint8_t>();
+    _3dFontLegacy.num_images = stream.ReadValue<uint8_t>();
+
+    auto ReadLegacyTextGlyph = [&stream]() {
+        LargeSceneryTextGlyph glyph{};
+        glyph.image_offset = stream.ReadValue<uint8_t>();
+        glyph.width = stream.ReadValue<uint8_t>();
+        glyph.height = stream.ReadValue<uint8_t>();
+        stream.ReadValue<uint8_t>();
+        return glyph;
+    };
+
+    for (size_t i = 0; i < std::size(_3dFontLegacy.glyphs); ++i)
+    {
+        _3dFontLegacy.glyphs[i] = ReadLegacyTextGlyph();
+    }
+    return _3dFontLegacy;
+}
+
 void LargeSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStream* stream)
 {
     stream->Seek(6, OpenRCT2::STREAM_SEEK_CURRENT);
     _legacyType.tool_id = static_cast<CursorID>(stream->ReadValue<uint8_t>());
     _legacyType.flags = stream->ReadValue<uint8_t>();
-    _legacyType.price = stream->ReadValue<int16_t>();
-    _legacyType.removal_price = stream->ReadValue<int16_t>();
+    _legacyType.price = stream->ReadValue<int16_t>() * 10;
+    _legacyType.removal_price = stream->ReadValue<int16_t>() * 10;
     stream->Seek(5, OpenRCT2::STREAM_SEEK_CURRENT);
     _legacyType.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
     _legacyType.scrolling_mode = stream->ReadValue<uint8_t>();
@@ -38,13 +66,12 @@ void LargeSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
 
     GetStringTable().Read(context, stream, ObjectStringID::NAME);
 
-    rct_object_entry sgEntry = stream->ReadValue<rct_object_entry>();
+    RCTObjectEntry sgEntry = stream->ReadValue<RCTObjectEntry>();
     SetPrimarySceneryGroup(ObjectEntryDescriptor(sgEntry));
 
     if (_legacyType.flags & LARGE_SCENERY_FLAG_3D_TEXT)
     {
-        rct_large_scenery_text _3dFontLegacy = {};
-        stream->Read(&_3dFontLegacy);
+        RCTLargeSceneryText _3dFontLegacy = ReadLegacy3DFont(*stream);
         _3dFont = std::make_unique<LargeSceneryText>(_3dFontLegacy);
         _legacyType.text = _3dFont.get();
     }
@@ -61,19 +88,33 @@ void LargeSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     if (_legacyType.removal_price <= 0)
     {
         // Make sure you don't make a profit when placing then removing.
-        money16 reimbursement = _legacyType.removal_price;
+        const auto reimbursement = _legacyType.removal_price;
         if (reimbursement > _legacyType.price)
         {
             context->LogError(ObjectError::InvalidProperty, "Sell price can not be more than buy price.");
         }
+    }
+
+    // RCT2 would always remap primary and secondary colours for large scenery
+    // This meant some custom large scenery objects did not get exported with the required flags, because they still
+    // functioned, but without the ability to change the colours when the object was selected in the scenery window.
+    // OpenRCT2 changes the rendering so that the flags are required, we therefore have to assume all custom objects
+    // can be recoloured.
+    if (!(_legacyType.flags & LARGE_SCENERY_FLAG_HAS_PRIMARY_COLOUR))
+    {
+        _legacyType.flags |= LARGE_SCENERY_FLAG_HAS_PRIMARY_COLOUR | LARGE_SCENERY_FLAG_HIDE_PRIMARY_REMAP_BUTTON;
+    }
+    if (!(_legacyType.flags & LARGE_SCENERY_FLAG_HAS_SECONDARY_COLOUR))
+    {
+        _legacyType.flags |= LARGE_SCENERY_FLAG_HAS_SECONDARY_COLOUR | LARGE_SCENERY_FLAG_HIDE_SECONDARY_REMAP_BUTTON;
     }
 }
 
 void LargeSceneryObject::Load()
 {
     GetStringTable().Sort();
-    _legacyType.name = language_allocate_object_string(GetName());
-    _baseImageId = gfx_object_allocate_images(GetImageTable().GetImages(), GetImageTable().GetCount());
+    _legacyType.name = LanguageAllocateObjectString(GetName());
+    _baseImageId = GfxObjectAllocateImages(GetImageTable().GetImages(), GetImageTable().GetCount());
     _legacyType.image = _baseImageId;
 
     _legacyType.tiles = _tiles.data();
@@ -95,29 +136,46 @@ void LargeSceneryObject::Load()
 
 void LargeSceneryObject::Unload()
 {
-    language_free_object_string(_legacyType.name);
-    gfx_object_free_images(_baseImageId, GetImageTable().GetCount());
+    LanguageFreeObjectString(_legacyType.name);
+    GfxObjectFreeImages(_baseImageId, GetImageTable().GetCount());
 
     _legacyType.name = 0;
     _baseImageId = _legacyType.image = 0;
 }
 
-void LargeSceneryObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int32_t height) const
+void LargeSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
 {
     auto screenCoords = ScreenCoordsXY{ width / 2, (height / 2) - 39 };
 
-    const auto image = ImageId(_legacyType.image, COLOUR_BORDEAUX_RED, COLOUR_YELLOW);
-    gfx_draw_sprite(dpi, image, screenCoords);
+    auto image = ImageId(_legacyType.image);
+    if (_legacyType.flags & LARGE_SCENERY_FLAG_HAS_PRIMARY_COLOUR)
+        image = image.WithPrimary(COLOUR_BORDEAUX_RED);
+    if (_legacyType.flags & LARGE_SCENERY_FLAG_HAS_SECONDARY_COLOUR)
+        image = image.WithSecondary(COLOUR_YELLOW);
+    if (_legacyType.flags & LARGE_SCENERY_FLAG_HAS_TERTIARY_COLOUR)
+        image = image.WithTertiary(COLOUR_DARK_BROWN);
+
+    GfxDrawSprite(dpi, image, screenCoords);
 }
 
-std::vector<rct_large_scenery_tile> LargeSceneryObject::ReadTiles(OpenRCT2::IStream* stream)
+std::vector<LargeSceneryTile> LargeSceneryObject::ReadTiles(OpenRCT2::IStream* stream)
 {
-    auto tiles = std::vector<rct_large_scenery_tile>();
+    auto tiles = std::vector<LargeSceneryTile>();
+
+    auto ReadLegacyTile = [&stream]() {
+        LargeSceneryTile tile{};
+        tile.x_offset = stream->ReadValue<int16_t>();
+        tile.y_offset = stream->ReadValue<int16_t>();
+        tile.z_offset = stream->ReadValue<int16_t>();
+        tile.z_clearance = stream->ReadValue<uint8_t>();
+        tile.flags = stream->ReadValue<uint16_t>();
+        return tile;
+    };
+
     while (stream->ReadValue<uint16_t>() != 0xFFFF)
     {
         stream->Seek(-2, OpenRCT2::STREAM_SEEK_CURRENT);
-        auto tile = stream->ReadValue<rct_large_scenery_tile>();
-        tiles.push_back(std::move(tile));
+        tiles.push_back(ReadLegacyTile());
     }
     tiles.push_back({ -1, -1, -1, 255, 0xFFFF });
     return tiles;
@@ -133,8 +191,8 @@ void LargeSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
     {
         _legacyType.tool_id = Cursor::FromString(Json::GetString(properties["cursor"]), CursorID::StatueDown);
 
-        _legacyType.price = Json::GetNumber<int16_t>(properties["price"]);
-        _legacyType.removal_price = Json::GetNumber<int16_t>(properties["removalPrice"]);
+        _legacyType.price = Json::GetNumber<int16_t>(properties["price"]) * 10;
+        _legacyType.removal_price = Json::GetNumber<int16_t>(properties["removalPrice"]) * 10;
 
         _legacyType.scrolling_mode = Json::GetNumber<uint8_t>(properties["scrollingMode"], SCROLLING_MODE_NONE);
 
@@ -143,6 +201,7 @@ void LargeSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
             {
                 { "hasPrimaryColour", LARGE_SCENERY_FLAG_HAS_PRIMARY_COLOUR },
                 { "hasSecondaryColour", LARGE_SCENERY_FLAG_HAS_SECONDARY_COLOUR },
+                { "hasTertiaryColour", LARGE_SCENERY_FLAG_HAS_TERTIARY_COLOUR },
                 { "isAnimated", LARGE_SCENERY_FLAG_ANIMATED },
                 { "isPhotogenic", LARGE_SCENERY_FLAG_PHOTOGENIC },
                 { "isTree", LARGE_SCENERY_FLAG_IS_TREE },
@@ -169,15 +228,15 @@ void LargeSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
     PopulateTablesFromJson(context, root);
 }
 
-std::vector<rct_large_scenery_tile> LargeSceneryObject::ReadJsonTiles(json_t& jTiles)
+std::vector<LargeSceneryTile> LargeSceneryObject::ReadJsonTiles(json_t& jTiles)
 {
-    std::vector<rct_large_scenery_tile> tiles;
+    std::vector<LargeSceneryTile> tiles;
 
     for (auto& jTile : jTiles)
     {
         if (jTile.is_object())
         {
-            rct_large_scenery_tile tile = {};
+            LargeSceneryTile tile = {};
             tile.x_offset = Json::GetNumber<int16_t>(jTile["x"]);
             tile.y_offset = Json::GetNumber<int16_t>(jTile["y"]);
             tile.z_offset = Json::GetNumber<int16_t>(jTile["z"]);
@@ -261,14 +320,14 @@ std::vector<CoordsXY> LargeSceneryObject::ReadJsonOffsets(json_t& jOffsets)
     return offsets;
 }
 
-std::vector<rct_large_scenery_text_glyph> LargeSceneryObject::ReadJsonGlyphs(json_t& jGlyphs)
+std::vector<LargeSceneryTextGlyph> LargeSceneryObject::ReadJsonGlyphs(json_t& jGlyphs)
 {
-    std::vector<rct_large_scenery_text_glyph> glyphs;
+    std::vector<LargeSceneryTextGlyph> glyphs;
     for (auto& jGlyph : jGlyphs)
     {
         if (jGlyph.is_object())
         {
-            rct_large_scenery_text_glyph glyph = {};
+            LargeSceneryTextGlyph glyph = {};
             glyph.image_offset = Json::GetNumber<uint8_t>(jGlyph["image"]);
             glyph.width = Json::GetNumber<uint8_t>(jGlyph["width"]);
             glyph.height = Json::GetNumber<uint8_t>(jGlyph["height"]);
@@ -278,7 +337,7 @@ std::vector<rct_large_scenery_text_glyph> LargeSceneryObject::ReadJsonGlyphs(jso
     return glyphs;
 }
 
-const rct_large_scenery_tile* LargeSceneryObject::GetTileForSequence(uint8_t SequenceIndex) const
+const LargeSceneryTile* LargeSceneryObject::GetTileForSequence(uint8_t SequenceIndex) const
 {
     if (SequenceIndex >= _tiles.size())
         return nullptr;

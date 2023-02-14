@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -36,10 +36,16 @@ constexpr const bool peep_slow_walking_types[] = {
     true,  // PeepSpriteType::Balloon
 };
 
-StaffSetCostumeAction::StaffSetCostumeAction(uint16_t spriteIndex, EntertainerCostume costume)
+StaffSetCostumeAction::StaffSetCostumeAction(EntityId spriteIndex, EntertainerCostume costume)
     : _spriteIndex(spriteIndex)
     , _costume(costume)
 {
+}
+
+void StaffSetCostumeAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit("id", _spriteIndex);
+    visitor.Visit("costume", _costume);
 }
 
 uint16_t StaffSetCostumeAction::GetActionFlags() const
@@ -56,7 +62,7 @@ void StaffSetCostumeAction::Serialise(DataSerialiser& stream)
 
 GameActions::Result StaffSetCostumeAction::Query() const
 {
-    if (_spriteIndex >= MAX_ENTITIES)
+    if (_spriteIndex.ToUnderlying() >= MAX_ENTITIES || _spriteIndex.IsNull())
     {
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
@@ -64,14 +70,14 @@ GameActions::Result StaffSetCostumeAction::Query() const
     auto* staff = TryGetEntity<Staff>(_spriteIndex);
     if (staff == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
 
     auto spriteType = EntertainerCostumeToSprite(_costume);
     if (EnumValue(spriteType) > std::size(peep_slow_walking_types))
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
     return GameActions::Result();
@@ -82,7 +88,7 @@ GameActions::Result StaffSetCostumeAction::Execute() const
     auto* staff = TryGetEntity<Staff>(_spriteIndex);
     if (staff == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
 
@@ -97,9 +103,9 @@ GameActions::Result StaffSetCostumeAction::Execute() const
     staff->UpdateCurrentActionSpriteType();
     staff->Invalidate();
 
-    window_invalidate_by_number(WC_PEEP, _spriteIndex);
+    WindowInvalidateByNumber(WindowClass::Peep, _spriteIndex);
     auto intent = Intent(INTENT_ACTION_REFRESH_STAFF_LIST);
-    context_broadcast_intent(&intent);
+    ContextBroadcastIntent(&intent);
 
     auto res = GameActions::Result();
     res.Position = staff->GetLocation();

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -21,20 +21,21 @@ enum class RideSetAppearanceType : uint8_t
     VehicleColourTrim,
     VehicleColourTernary,
     VehicleColourScheme,
-    EntranceStyle
+    EntranceStyle,
+    SellingItemColourIsRandom
 };
 
 class RideSetAppearanceAction final : public GameActionBase<GameCommand::SetRideAppearance>
 {
 private:
-    NetworkRideId_t _rideIndex{ RIDE_ID_NULL };
+    RideId _rideIndex{ RideId::GetNull() };
     RideSetAppearanceType _type{};
     uint16_t _value{};
     uint32_t _index{};
 
 public:
     RideSetAppearanceAction() = default;
-    RideSetAppearanceAction(ride_id_t rideIndex, RideSetAppearanceType type, uint16_t value, uint32_t index);
+    RideSetAppearanceAction(RideId rideIndex, RideSetAppearanceType type, uint16_t value, uint32_t index);
 
     void AcceptParameters(GameActionParameterVisitor& visitor) override;
 

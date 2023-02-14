@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -11,6 +11,7 @@
 
 #    include "UiExtensions.h"
 
+#    include "CustomImages.h"
 #    include "CustomMenu.h"
 #    include "ScGraphicsContext.hpp"
 #    include "ScImageManager.hpp"
@@ -55,7 +56,10 @@ void UiScriptExtensions::Extend(ScriptEngine& scriptEngine)
     ScTitleSequencePark::Register(ctx);
     ScWindow::Register(ctx);
 
+    InitialiseCustomImages(scriptEngine);
     InitialiseCustomMenuItems(scriptEngine);
+    scriptEngine.SubscribeToPluginStoppedEvent(
+        [](std::shared_ptr<Plugin> plugin) -> void { CloseWindowsOwnedByPlugin(plugin); });
 }
 
 std::shared_ptr<ScWindow> ScWidget::window_get() const
@@ -72,6 +76,7 @@ void ScWidget::Register(duk_context* ctx)
     dukglue_register_property(ctx, &ScWidget::y_get, &ScWidget::y_set, "y");
     dukglue_register_property(ctx, &ScWidget::width_get, &ScWidget::width_set, "width");
     dukglue_register_property(ctx, &ScWidget::height_get, &ScWidget::height_set, "height");
+    dukglue_register_property(ctx, &ScWidget::tooltip_get, &ScWidget::tooltip_set, "tooltip");
     dukglue_register_property(ctx, &ScWidget::isDisabled_get, &ScWidget::isDisabled_set, "isDisabled");
     dukglue_register_property(ctx, &ScWidget::isVisible_get, &ScWidget::isVisible_set, "isVisible");
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2021 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -29,10 +29,10 @@ namespace OpenRCT2::Ui::ShortcutId
     constexpr std::string_view InterfaceMute = "interface.misc.mute";
     constexpr std::string_view InterfaceSceneryPicker = "interface.misc.scenery_picker";
     constexpr std::string_view InterfaceDisableClearance = "interface.misc.disable_clearance";
-    constexpr std::string_view MultiplayerChat = "interface.misc.multiplayer_chat";
+    constexpr std::string_view InterfaceMultiplayerChat = "interface.misc.multiplayer_chat";
 
     // Interface / graphics
-    constexpr std::string_view ScaleToggleWindowMode = "interface.graphics.toggle_window_mode";
+    constexpr std::string_view InterfaceScaleToggleWindowMode = "interface.graphics.toggle_window_mode";
     constexpr std::string_view InterfaceScaleIncrease = "interface.graphics.increase";
     constexpr std::string_view InterfaceScaleDecrease = "interface.graphics.decrease";
 
@@ -52,9 +52,10 @@ namespace OpenRCT2::Ui::ShortcutId
     constexpr std::string_view InterfaceOpenMessages = "interface.open.messages";
     constexpr std::string_view InterfaceOpenMap = "interface.open.map";
     constexpr std::string_view InterfaceShowOptions = "interface.open.options";
+    constexpr std::string_view InterfaceOpenTransparencyOptions = "interface.open.transparency_options";
     constexpr std::string_view InterfaceOpenCheats = "interface.open.cheats";
     constexpr std::string_view InterfaceOpenTileInspector = "interface.open.tileinspector";
-    constexpr std::string_view MultiplayerShow = "interface.open.multiplayer";
+    constexpr std::string_view InterfaceMultiplayerShow = "interface.open.multiplayer";
 
     // View / general
     constexpr std::string_view ViewGeneralZoomOut = "view.general.zoom_out";
@@ -74,13 +75,16 @@ namespace OpenRCT2::Ui::ShortcutId
     constexpr std::string_view ViewToggleBaseLand = "view.toggle.hide_base_land";
     constexpr std::string_view ViewToggleVerticalLand = "view.toggle.hide_vertical_land";
     constexpr std::string_view ViewToggleRides = "view.toggle.transparent_rides";
+    constexpr std::string_view ViewToggleVehicles = "view.toggle.transparent_vehicles";
+    constexpr std::string_view ViewToggleVegetation = "view.toggle.transparent_vegetation";
     constexpr std::string_view ViewToggleScenery = "view.toggle.transparent_scenery";
+    constexpr std::string_view ViewToggleFootpaths = "view.toggle.transparent_footpaths";
     constexpr std::string_view ViewToggleSupports = "view.toggle.hide_supports";
-    constexpr std::string_view ViewTogglePeeps = "view.toggle.hide_peeps";
+    constexpr std::string_view ViewToggleGuests = "view.toggle.hide_guests";
+    constexpr std::string_view ViewToggleStaff = "view.toggle.hide_staff";
     constexpr std::string_view ViewToggleLandHeightMarkers = "view.toggle.show_land_height";
     constexpr std::string_view ViewToggleTrackHeightMarkers = "view.toggle.show_track_height";
     constexpr std::string_view ViewToggleFootpathHeightMarkers = "view.toggle.show_footpath_height";
-    constexpr std::string_view ViewToggleFootpaths = "view.toggle.transparent_footpaths";
     constexpr std::string_view ViewToggleGridlines = "view.toggle.show_gridlines";
     constexpr std::string_view ViewToggleCutAway = "view.toggle.toggle_cut_away";
     constexpr std::string_view ViewToogleFootpathIssues = "view.toggle.highlight_path_issues";

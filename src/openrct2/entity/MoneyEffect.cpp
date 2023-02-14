@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,9 +13,11 @@
 #include "../drawing/Drawing.h"
 #include "../interface/Viewport.h"
 #include "../interface/Window.h"
+#include "../localisation/Formatting.h"
 #include "../localisation/Localisation.h"
 #include "../network/network.h"
 #include "../paint/Paint.h"
+#include "../profiling/Profiling.h"
 #include "../world/Map.h"
 #include "EntityRegistry.h"
 
@@ -37,7 +39,7 @@ template<> bool EntityBase::Is<MoneyEffect>() const
  */
 void MoneyEffect::CreateAt(money64 value, const CoordsXYZ& effectPos, bool vertical)
 {
-    if (value == MONEY(0, 00))
+    if (value == 0.00_GBP)
         return;
 
     MoneyEffect* moneyEffect = CreateEntity<MoneyEffect>();
@@ -58,8 +60,8 @@ void MoneyEffect::CreateAt(money64 value, const CoordsXYZ& effectPos, bool verti
     {
         auto [stringId, newValue] = moneyEffect->GetStringId();
         char buffer[128];
-        format_string(buffer, 128, stringId, &newValue);
-        offsetX = -(gfx_get_string_width(buffer, FontSpriteBase::MEDIUM) / 2);
+        OpenRCT2::FormatStringLegacy(buffer, 128, stringId, &newValue);
+        offsetX = -(GfxGetStringWidth(buffer, FontStyle::Medium) / 2);
     }
     moneyEffect->OffsetX = offsetX;
     moneyEffect->Wiggle = 0;
@@ -76,23 +78,23 @@ void MoneyEffect::Create(money64 value, const CoordsXYZ& loc)
     {
         // If game actions return no valid location of the action we can not use the screen
         // coordinates as every client will have different ones.
-        if (network_get_mode() != NETWORK_MODE_NONE)
+        if (NetworkGetMode() != NETWORK_MODE_NONE)
         {
-            log_warning("Attempted to create money effect without a valid location in multiplayer");
+            LOG_WARNING("Attempted to create money effect without a valid location in multiplayer");
             return;
         }
 
-        rct_window* mainWindow = window_get_main();
+        WindowBase* mainWindow = WindowGetMain();
         if (mainWindow == nullptr)
             return;
 
-        rct_viewport* mainViewport = window_get_viewport(mainWindow);
-        auto mapPositionXY = screen_get_map_xy(
+        Viewport* mainViewport = WindowGetViewport(mainWindow);
+        auto mapPositionXY = ScreenGetMapXY(
             { mainViewport->pos.x + (mainViewport->width / 2), mainViewport->pos.y + (mainViewport->height / 2) }, nullptr);
         if (!mapPositionXY.has_value())
             return;
 
-        offsetLoc = { mapPositionXY.value(), tile_element_height(*mapPositionXY) };
+        offsetLoc = { mapPositionXY.value(), TileElementHeight(*mapPositionXY) };
     }
     offsetLoc.z += 10;
     CreateAt(-value, offsetLoc, false);
@@ -125,8 +127,8 @@ void MoneyEffect::Update()
     {
         newZ += 1;
     }
-    newY += _moneyEffectMoveOffset[get_current_rotation()].y;
-    newX += _moneyEffectMoveOffset[get_current_rotation()].x;
+    newY += _moneyEffectMoveOffset[GetCurrentRotation()].y;
+    newX += _moneyEffectMoveOffset[GetCurrentRotation()].x;
 
     MoveTo({ newX, newY, newZ });
 
@@ -139,11 +141,11 @@ void MoneyEffect::Update()
     EntityRemove(this);
 }
 
-std::pair<rct_string_id, money64> MoneyEffect::GetStringId() const
+std::pair<StringId, money64> MoneyEffect::GetStringId() const
 {
-    rct_string_id spentStringId = Vertical ? STR_MONEY_EFFECT_SPEND_HIGHP : STR_MONEY_EFFECT_SPEND;
-    rct_string_id receiveStringId = Vertical ? STR_MONEY_EFFECT_RECEIVE_HIGHP : STR_MONEY_EFFECT_RECEIVE;
-    rct_string_id stringId = receiveStringId;
+    StringId spentStringId = Vertical ? STR_MONEY_EFFECT_SPEND_HIGHP : STR_MONEY_EFFECT_SPEND;
+    StringId receiveStringId = Vertical ? STR_MONEY_EFFECT_RECEIVE_HIGHP : STR_MONEY_EFFECT_RECEIVE;
+    StringId stringId = receiveStringId;
     money64 outValue = Value;
     if (Value < 0)
     {
@@ -166,9 +168,11 @@ void MoneyEffect::Serialise(DataSerialiser& stream)
     stream << Wiggle;
 }
 
-void MoneyEffect::Paint(paint_session& session, int32_t imageDirection) const
+void MoneyEffect::Paint(PaintSession& session, int32_t imageDirection) const
 {
-    rct_drawpixelinfo& dpi = session.DPI;
+    PROFILED_FUNCTION();
+
+    DrawPixelInfo& dpi = session.DPI;
     if (dpi.zoom_level > ZoomLevel{ 0 })
     {
         return;

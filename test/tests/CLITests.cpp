@@ -13,27 +13,27 @@ class CommandLineTests : public testing::Test
 public:
     static std::string SpriteTestDataPath()
     {
-        return Path::Combine(TestData::GetBasePath(), "sprites");
+        return Path::Combine(TestData::GetBasePath(), u8"sprites");
     }
 
     static std::string ManifestFilePath()
     {
-        return Path::Combine(SpriteTestDataPath(), "manifest.json");
+        return Path::Combine(SpriteTestDataPath(), u8"manifest.json");
     }
 
     static std::string BadManifestFilePath()
     {
-        return Path::Combine(SpriteTestDataPath(), "badManifest.json");
+        return Path::Combine(SpriteTestDataPath(), u8"badManifest.json");
     }
 
     static std::string ExampleSpriteFilePath()
     {
-        return Path::Combine(SpriteTestDataPath(), "example.dat");
+        return Path::Combine(SpriteTestDataPath(), u8"example.dat");
     }
 
     static std::string BuildOutputfilePath()
     {
-        return Path::Combine(SpriteTestDataPath(), "result.dat");
+        return Path::Combine(SpriteTestDataPath(), u8"result.dat");
     }
 
     static bool CompareSpriteFiles(std::string original, std::string generated)
@@ -59,7 +59,7 @@ TEST_F(CommandLineTests, cmdline_cmdline_for_sprite_details)
     std::string exampleFilePath = ExampleSpriteFilePath();
     const char* detailsCmd[3] = { "details", exampleFilePath.c_str() };
 
-    int32_t result = cmdline_for_sprite(detailsCmd, 2);
+    int32_t result = CmdLineForSprite(detailsCmd, 2);
     // need to come up with some way to extract stdout/stderr stream if we want to
     // fully test this module
     ASSERT_EQ(result, 1);
@@ -71,7 +71,7 @@ TEST_F(CommandLineTests, cmdline_cmdline_for_sprite_build)
     std::string outputfilePath = BuildOutputfilePath();
     const char* detailsCmd[3] = { "build", outputfilePath.c_str(), manifestFilePath.c_str() };
 
-    int32_t result = cmdline_for_sprite(detailsCmd, 3);
+    int32_t result = CmdLineForSprite(detailsCmd, 3);
     ASSERT_EQ(result, 1);
     // compare the resulting output file and assert its identical to expected
     ASSERT_TRUE(CompareSpriteFiles(ExampleSpriteFilePath(), outputfilePath));
@@ -83,14 +83,14 @@ TEST_F(CommandLineTests, cmdline_cmdline_for_sprite_failed_build)
     std::string manifestFilePath = ManifestFilePath();
     std::string outputfilePath = BuildOutputfilePath();
     const char* detailsCmd[3] = { "build", outputfilePath.c_str(), manifestFilePath.c_str() };
-    int32_t result = cmdline_for_sprite(detailsCmd, 3);
+    int32_t result = CmdLineForSprite(detailsCmd, 3);
     ASSERT_EQ(result, 1);
     ASSERT_TRUE(CompareSpriteFiles(ExampleSpriteFilePath(), outputfilePath));
 
     // now use bad manifest and make sure output file is not edited
     std::string badManifestFilePath = BadManifestFilePath();
     detailsCmd[2] = badManifestFilePath.c_str();
-    result = cmdline_for_sprite(detailsCmd, 3);
+    result = CmdLineForSprite(detailsCmd, 3);
     // check the command failed
     ASSERT_EQ(result, -1);
     // validate the target file was unchanged

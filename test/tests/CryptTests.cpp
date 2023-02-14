@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2018 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -43,12 +43,12 @@ public:
 
     std::string GetTestPrivateKeyPath()
     {
-        return Path::Combine(TestData::GetBasePath(), "keys", "Player.privkey");
+        return Path::Combine(TestData::GetBasePath(), u8"keys", u8"Player.privkey");
     }
 
     std::string GetTestPublicKeyPath()
     {
-        return Path::Combine(TestData::GetBasePath(), "keys", "Player-56f4afb74622a23bd2539ee701fe1b2c13d7e6ba.pubkey");
+        return Path::Combine(TestData::GetBasePath(), u8"keys", u8"Player-56f4afb74622a23bd2539ee701fe1b2c13d7e6ba.pubkey");
     }
 };
 

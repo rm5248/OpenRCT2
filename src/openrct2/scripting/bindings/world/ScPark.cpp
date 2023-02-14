@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2021 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -41,7 +41,6 @@ namespace OpenRCT2::Scripting
         { "difficultGuestGeneration", PARK_FLAGS_DIFFICULT_GUEST_GENERATION },
         { "freeParkEntry", PARK_FLAGS_PARK_FREE_ENTRY },
         { "difficultParkRating", PARK_FLAGS_DIFFICULT_PARK_RATING },
-        { "noMoney", PARK_FLAGS_NO_MONEY_SCENARIO },
         { "unlockAllPrices", PARK_FLAGS_UNLOCK_ALL_PRICES },
     });
 
@@ -57,7 +56,7 @@ namespace OpenRCT2::Scripting
         {
             gCash = value;
             auto intent = Intent(INTENT_ACTION_UPDATE_CASH);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
@@ -74,7 +73,7 @@ namespace OpenRCT2::Scripting
         {
             gParkRating = std::min(std::max(0, value), 999);
             auto intent = Intent(INTENT_ACTION_UPDATE_PARK_RATING);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
@@ -90,7 +89,7 @@ namespace OpenRCT2::Scripting
         {
             gBankLoan = value;
             auto intent = Intent(INTENT_ACTION_UPDATE_CASH);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
@@ -106,7 +105,7 @@ namespace OpenRCT2::Scripting
         {
             gMaxBankLoan = value;
             auto intent = Intent(INTENT_ACTION_UPDATE_CASH);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
@@ -121,7 +120,7 @@ namespace OpenRCT2::Scripting
         if (gParkEntranceFee != value)
         {
             gParkEntranceFee = value;
-            window_invalidate_by_class(WC_PARK_INFORMATION);
+            WindowInvalidateByClass(WindowClass::ParkInformation);
         }
     }
 
@@ -172,7 +171,7 @@ namespace OpenRCT2::Scripting
         {
             gParkValue = value;
             auto intent = Intent(INTENT_ACTION_UPDATE_CASH);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
@@ -188,11 +187,11 @@ namespace OpenRCT2::Scripting
         {
             gCompanyValue = value;
             auto intent = Intent(INTENT_ACTION_UPDATE_CASH);
-            context_broadcast_intent(&intent);
+            ContextBroadcastIntent(&intent);
         }
     }
 
-    money16 ScPark::totalRideValueForMoney_get() const
+    money64 ScPark::totalRideValueForMoney_get() const
     {
         return gTotalRideValueForMoney;
     }
@@ -208,7 +207,7 @@ namespace OpenRCT2::Scripting
         if (gTotalAdmissions != value)
         {
             gTotalAdmissions = value;
-            window_invalidate_by_class(WC_PARK_INFORMATION);
+            WindowInvalidateByClass(WindowClass::ParkInformation);
         }
     }
 
@@ -223,7 +222,7 @@ namespace OpenRCT2::Scripting
         if (gTotalIncomeFromAdmissions != value)
         {
             gTotalIncomeFromAdmissions = value;
-            window_invalidate_by_class(WC_PARK_INFORMATION);
+            WindowInvalidateByClass(WindowClass::ParkInformation);
         }
     }
 
@@ -273,8 +272,8 @@ namespace OpenRCT2::Scripting
         auto& park = GetContext()->GetGameState()->GetPark();
         if (park.Name != value)
         {
-            park.Name = value;
-            gfx_invalidate_screen();
+            park.Name = std::move(value);
+            GfxInvalidateScreen();
         }
     }
 
@@ -292,7 +291,7 @@ namespace OpenRCT2::Scripting
             gParkFlags |= mask;
         else
             gParkFlags &= ~mask;
-        gfx_invalidate_screen();
+        GfxInvalidateScreen();
     }
 
     std::vector<std::shared_ptr<ScParkMessage>> ScPark::messages_get() const

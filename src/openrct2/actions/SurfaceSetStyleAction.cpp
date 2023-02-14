@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -26,6 +26,13 @@ SurfaceSetStyleAction::SurfaceSetStyleAction(MapRange range, ObjectEntryIndex su
 {
 }
 
+void SurfaceSetStyleAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit(_range);
+    visitor.Visit("surfaceStyle", _surfaceStyle);
+    visitor.Visit("edgeStyle", _edgeStyle);
+}
+
 void SurfaceSetStyleAction::Serialise(DataSerialiser& stream)
 {
     GameAction::Serialise(stream);
@@ -39,20 +46,13 @@ GameActions::Result SurfaceSetStyleAction::Query() const
     res.ErrorTitle = STR_CANT_CHANGE_LAND_TYPE;
     res.Expenditure = ExpenditureType::Landscaping;
 
-    auto normRange = _range.Normalise();
-    auto x0 = std::max(normRange.GetLeft(), 32);
-    auto y0 = std::max(normRange.GetTop(), 32);
-    auto x1 = std::min(normRange.GetRight(), GetMapSizeMaxXY());
-    auto y1 = std::min(normRange.GetBottom(), GetMapSizeMaxXY());
-
-    MapRange validRange{ x0, y0, x1, y1 };
-
+    auto validRange = ClampRangeWithinMap(_range.Normalise());
     auto& objManager = OpenRCT2::GetContext()->GetObjectManager();
     if (_surfaceStyle != OBJECT_ENTRY_INDEX_NULL)
     {
         if (_surfaceStyle > 0x1F)
         {
-            log_error("Invalid surface style.");
+            LOG_ERROR("Invalid surface style.");
             return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_CHANGE_LAND_TYPE, STR_NONE);
         }
 
@@ -61,7 +61,7 @@ GameActions::Result SurfaceSetStyleAction::Query() const
 
         if (surfaceObj == nullptr)
         {
-            log_error("Invalid surface style.");
+            LOG_ERROR("Invalid surface style.");
             return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_CHANGE_LAND_TYPE, STR_NONE);
         }
     }
@@ -70,7 +70,7 @@ GameActions::Result SurfaceSetStyleAction::Query() const
     {
         if (_edgeStyle > 0xF)
         {
-            log_error("Invalid edge style.");
+            LOG_ERROR("Invalid edge style.");
             return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_CHANGE_LAND_TYPE, STR_NONE);
         }
 
@@ -78,14 +78,14 @@ GameActions::Result SurfaceSetStyleAction::Query() const
 
         if (edgeObj == nullptr)
         {
-            log_error("Invalid edge style.");
+            LOG_ERROR("Invalid edge style.");
             return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_CHANGE_LAND_TYPE, STR_NONE);
         }
     }
 
     auto xMid = (validRange.GetLeft() + validRange.GetRight()) / 2 + 16;
     auto yMid = (validRange.GetTop() + validRange.GetBottom()) / 2 + 16;
-    auto heightMid = tile_element_height({ xMid, yMid });
+    auto heightMid = TileElementHeight({ xMid, yMid });
 
     res.Position.x = xMid;
     res.Position.y = yMid;
@@ -111,11 +111,11 @@ GameActions::Result SurfaceSetStyleAction::Query() const
 
             if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
             {
-                if (!map_is_location_in_park(coords))
+                if (!MapIsLocationInPark(coords))
                     continue;
             }
 
-            auto surfaceElement = map_get_surface_element_at(coords);
+            auto surfaceElement = MapGetSurfaceElementAt(coords);
             if (surfaceElement == nullptr)
             {
                 continue;
@@ -158,17 +158,10 @@ GameActions::Result SurfaceSetStyleAction::Execute() const
     res.ErrorTitle = STR_CANT_CHANGE_LAND_TYPE;
     res.Expenditure = ExpenditureType::Landscaping;
 
-    auto normRange = _range.Normalise();
-    auto x0 = std::max(normRange.GetLeft(), 32);
-    auto y0 = std::max(normRange.GetTop(), 32);
-    auto x1 = std::min(normRange.GetRight(), GetMapSizeMaxXY());
-    auto y1 = std::min(normRange.GetBottom(), GetMapSizeMaxXY());
-
-    MapRange validRange{ x0, y0, x1, y1 };
-
+    auto validRange = ClampRangeWithinMap(_range.Normalise());
     auto xMid = (validRange.GetLeft() + validRange.GetRight()) / 2 + 16;
     auto yMid = (validRange.GetTop() + validRange.GetBottom()) / 2 + 16;
-    auto heightMid = tile_element_height({ xMid, yMid });
+    auto heightMid = TileElementHeight({ xMid, yMid });
 
     res.Position.x = xMid;
     res.Position.y = yMid;
@@ -186,11 +179,11 @@ GameActions::Result SurfaceSetStyleAction::Execute() const
 
             if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
             {
-                if (!map_is_location_in_park(coords))
+                if (!MapIsLocationInPark(coords))
                     continue;
             }
 
-            auto surfaceElement = map_get_surface_element_at(coords);
+            auto surfaceElement = MapGetSurfaceElementAt(coords);
             if (surfaceElement == nullptr)
             {
                 continue;
@@ -211,8 +204,8 @@ GameActions::Result SurfaceSetStyleAction::Execute() const
 
                         surfaceElement->SetSurfaceStyle(_surfaceStyle);
 
-                        map_invalidate_tile_full(coords);
-                        footpath_remove_litter({ coords, tile_element_height(coords) });
+                        MapInvalidateTileFull(coords);
+                        FootpathRemoveLitter({ coords, TileElementHeight(coords) });
                     }
                 }
             }
@@ -226,14 +219,14 @@ GameActions::Result SurfaceSetStyleAction::Execute() const
                     edgeCost += 100;
 
                     surfaceElement->SetEdgeStyle(_edgeStyle);
-                    map_invalidate_tile_full(coords);
+                    MapInvalidateTileFull(coords);
                 }
             }
 
             if (surfaceElement->CanGrassGrow() && (surfaceElement->GetGrassLength() & 7) != GRASS_LENGTH_CLEAR_0)
             {
                 surfaceElement->SetGrassLength(GRASS_LENGTH_CLEAR_0);
-                map_invalidate_tile_full(coords);
+                MapInvalidateTileFull(coords);
             }
         }
     }

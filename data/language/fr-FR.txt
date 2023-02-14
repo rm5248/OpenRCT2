@@ -98,6 +98,8 @@ STR_0091    :Manège Inconnu (59)
 STR_0092    :Moteur à induction linéaire
 STR_0093    :Montagnes russes hybrides
 STR_0094    :Montagnes russes à rail unique
+STR_0095    :Montagnes russes alpines
+STR_0096    :Montagnes russes en bois classiques
 STR_0512    :Des voitures individuelles descendent des pentes régulières en virage
 STR_0513    :Grand huit que les passagers parcourent debout
 STR_0514    :Des voitures suspendues sous la voie se balancent dans les virages des montagnes russes
@@ -179,6 +181,8 @@ STR_0600    :Train de mine à propulsion franchissant une voie régulière et al
 STR_0602    :Train de montagnes russes propulsé hors de la station par des moteurs à induction linéaire et fonçant dans des inversions renversantes
 STR_0603    :Train de montagnes russes en bois avec des rails en acier, permettant des grandes chutes et des inversions.
 STR_0604    :Les passagers parcourent une voie à rail unique dans des voitures mono-places, à travers des inversions et des virages serrés
+STR_0605    :Les passagers dévalent une voie en acier sinueuse, freinant pour contrôler leur vitesse
+STR_0606    :Une montagne russe en bois au style ancien, rapide et turbulente, avec de nombreux moments en suspension, quelques forces latérales et conçues pour paraître hors de contrôle
 STR_0767    :Visiteur {INT32}
 STR_0768    :Agent d’entretien {INT32}
 STR_0769    :Mécanicien {INT32}
@@ -342,7 +346,6 @@ STR_0950    :Charger une partie
 STR_0951    :Quitter la partie
 STR_0952    :Quitter la partie
 STR_0953    :Charger un paysage
-STR_0954    :
 STR_0955    :Sélectionne l’angle de rotation des sièges pour cette section de voie
 STR_0956    :-180°
 STR_0957    :-135°
@@ -390,10 +393,10 @@ STR_0998    :Plus de quais autorisés sur cette attraction
 STR_0999    :Nécessite un quai
 STR_1000    :La voie ne constitue pas un circuit complet
 STR_1001    :La voie est inadaptée à ce type de train
-STR_1002    :Impossible d’ouvrir {POP16}{POP16}{POP16}{STRINGID}…
-STR_1003    :Impossible de tester {POP16}{POP16}{POP16}{STRINGID}…
-STR_1004    :Impossible de fermer {POP16}{POP16}{POP16}{STRINGID}…
-STR_1005    :Impossible de commencer la construction sur {POP16}{POP16}{POP16}{STRINGID}…
+STR_1002    :Impossible d’ouvrir {STRINGID}…
+STR_1003    :Impossible de tester {STRINGID}…
+STR_1004    :Impossible de fermer {STRINGID}…
+STR_1005    :Impossible de commencer la construction sur {STRINGID}…
 STR_1006    :Doit être fermé d’abord
 STR_1007    :Impossible de créer suffisamment de véhicules
 STR_1008    :Ouvrir, fermer ou tester une attraction
@@ -755,7 +758,7 @@ STR_1363    :Trop haut pour les supports !
 STR_1364    :Les supports pour la voie d’au-dessus ne peuvent être plus étendus !
 STR_1365    :Balanc. intér. (gauche)
 STR_1366    :Balanc. intér. (droite)
-STR_1367    :Demie boucle
+STR_1367    :Petite demie boucle
 STR_1368    :Demi tire-bouchon (gauche)
 STR_1369    :Demi tire-bouchon (droite)
 STR_1370    :Tonneau (gauche)
@@ -878,7 +881,7 @@ STR_1486    :« Je n’ai pas encore fini mon {STRINGID} »
 STR_1487    :« Le seul fait de regarder {STRINGID} me rend malade »
 STR_1488    :« Je ne paierai pas si cher pour aller sur {STRINGID} »
 STR_1489    :« Je veux rentrer chez moi »
-STR_1490    :« {STRINGID} est un très bon choix »
+STR_1490    :« {STRINGID} est vraiment une bonne affaire »
 STR_1491    :« J’ai déjà {STRINGID} »
 STR_1492    :« Je ne peux pas me payer {STRINGID} »
 STR_1493    :« Je n’ai pas faim »
@@ -906,32 +909,32 @@ STR_1514    :« Quel beau décor ! »
 STR_1515    :« Ce parc est d’une propreté exemplaire »
 STR_1516    :« Les jets d’eau sont super »
 STR_1517    :« La musique est sympa ici »
-STR_1518    :« Ce ballon de {STRINGID} est un très bon choix »
-STR_1519    :« Cette peluche de {STRINGID} est un très bon choix »
-STR_1520    :« Ce plan du parc de {STRINGID} est un très bon choix »
-STR_1521    :« Cette photo sur le vif de {STRINGID} est un très bon choix »
-STR_1522    :« Ce parapluie de {STRINGID} est un très bon choix »
-STR_1523    :« Cette boisson de {STRINGID} est un très bon choix »
-STR_1524    :« Cet hamburger de {STRINGID} est un très bon choix »
-STR_1525    :« Ces frites de {STRINGID} sont un très bon choix »
-STR_1526    :« Cette glace de {STRINGID} est un très bon choix »
-STR_1527    :« Cette barbe-à-papa de {STRINGID} est un très bon choix »
+STR_1518    :« Ce ballon de {STRINGID} est vraiment une bonne affaire »
+STR_1519    :« Cette peluche de {STRINGID} est vraiment une bonne affaire »
+STR_1520    :« Ce plan du parc de {STRINGID} est vraiment une bonne affaire »
+STR_1521    :« Cette photo sur le vif de {STRINGID} est vraiment une bonne affaire »
+STR_1522    :« Ce parapluie de {STRINGID} est vraiment une bonne affaire »
+STR_1523    :« Cette boisson de {STRINGID} est vraiment une bonne affaire »
+STR_1524    :« Cet hamburger de {STRINGID} est vraiment une bonne affaire »
+STR_1525    :« Ces frites de {STRINGID} sont vraiment une bonne affaire »
+STR_1526    :« Cette glace de {STRINGID} est vraiment une bonne affaire »
+STR_1527    :« Cette barbe-à-papa de {STRINGID} est vraiment une bonne affaire »
 STR_1528    :
 STR_1529    :
 STR_1530    :
-STR_1531    :« Cette pizza de {STRINGID} est un très bon choix »
+STR_1531    :« Cette pizza de {STRINGID} est vraiment une bonne affaire »
 STR_1532    :
-STR_1533    :« Ce popcorn de {STRINGID} est un très bon choix »
-STR_1534    :« Ce hot-dog de {STRINGID} est un très bon choix »
-STR_1535    :« Ce poulpe de {STRINGID} est un très bon choix »
-STR_1536    :« Ce chapeau de {STRINGID} est un très bon choix »
-STR_1537    :« Cette pomme d’amour de {STRINGID} est un très bon choix »
-STR_1538    :« Ce t-shirt de {STRINGID} est un très bon choix »
-STR_1539    :« Ce donut de {STRINGID} est un très bon choix »
-STR_1540    :« Ce café de {STRINGID} est un très bon choix »
+STR_1533    :« Ce popcorn de {STRINGID} est vraiment une bonne affaire »
+STR_1534    :« Ce hot-dog de {STRINGID} est vraiment une bonne affaire »
+STR_1535    :« Ce poulpe de {STRINGID} est vraiment une bonne affaire »
+STR_1536    :« Ce chapeau de {STRINGID} est vraiment une bonne affaire »
+STR_1537    :« Cette pomme d’amour de {STRINGID} est vraiment une bonne affaire »
+STR_1538    :« Ce t-shirt de {STRINGID} est vraiment une bonne affaire »
+STR_1539    :« Ce donut de {STRINGID} est vraiment une bonne affaire »
+STR_1540    :« Ce café de {STRINGID} est vraiment une bonne affaire »
 STR_1541    :
-STR_1542    :« Ce poulet frit de {STRINGID} est un très bon choix »
-STR_1543    :« Cette limonade de {STRINGID} est un très bon choix »
+STR_1542    :« Ce poulet frit de {STRINGID} est vraiment une bonne affaire »
+STR_1543    :« Cette limonade de {STRINGID} est vraiment une bonne affaire »
 STR_1544    :
 STR_1545    :
 STR_1546    :
@@ -972,27 +975,27 @@ STR_1580    :
 STR_1581    :
 STR_1582    :
 STR_1583    :
-STR_1584    :« Cette photo sur le vif de {STRINGID} est un très bon choix »
-STR_1585    :« Cette photo sur le vif de {STRINGID} est un très bon choix »
-STR_1586    :« Cette photo sur le vif de {STRINGID} est un très bon choix »
-STR_1587    :« Ce bretzel de {STRINGID} est un très bon choix »
-STR_1588    :« Ce chocolat chaud de {STRINGID} est un très bon choix »
-STR_1589    :« Ce thé glacé de {STRINGID} est un très bon choix »
-STR_1590    :« Ce funnel cake de {STRINGID} est un très bon choix »
-STR_1591    :« Ces lunettes de soleil de {STRINGID} sont un très bon choix »
-STR_1592    :« Ces nouilles au bœuf de {STRINGID} sont un très bon choix »
-STR_1593    :« Ces nouilles au riz frit de {STRINGID} sont un très bon choix »
-STR_1594    :« Cette soupe aux raviolis de {STRINGID} est un très bon choix »
-STR_1595    :« Cette soupe aux boulettes de viande de {STRINGID} est un très bon choix »
-STR_1596    :« Ce jus de fruits de {STRINGID} est un très bon choix »
-STR_1597    :« Ce lait de soja de {STRINGID} est un très bon choix »
-STR_1598    :« Ce sujongkwa de {STRINGID} est un très bon choix »
-STR_1599    :« Ce sandwich de {STRINGID} est un très bon choix »
-STR_1600    :« Ce cookie de {STRINGID} est un très bon choix »
+STR_1584    :« Cette photo sur le vif de {STRINGID} est vraiment une bonne affaire »
+STR_1585    :« Cette photo sur le vif de {STRINGID} est vraiment une bonne affaire »
+STR_1586    :« Cette photo sur le vif de {STRINGID} est vraiment une bonne affaire »
+STR_1587    :« Ce bretzel de {STRINGID} est vraiment une bonne affaire »
+STR_1588    :« Ce chocolat chaud de {STRINGID} est vraiment une bonne affaire »
+STR_1589    :« Ce thé glacé de {STRINGID} est vraiment une bonne affaire »
+STR_1590    :« Ce funnel cake de {STRINGID} est vraiment une bonne affaire »
+STR_1591    :« Ces lunettes de soleil de {STRINGID} sont vraiment une bonne affaire »
+STR_1592    :« Ces nouilles au bœuf de {STRINGID} sont vraiment une bonne affaire »
+STR_1593    :« Ces nouilles au riz frit de {STRINGID} sont vraiment une bonne affaire »
+STR_1594    :« Cette soupe aux raviolis de {STRINGID} est vraiment une bonne affaire »
+STR_1595    :« Cette soupe aux boulettes de viande de {STRINGID} est vraiment une bonne affaire »
+STR_1596    :« Ce jus de fruits de {STRINGID} est vraiment une bonne affaire »
+STR_1597    :« Ce lait de soja de {STRINGID} est vraiment une bonne affaire »
+STR_1598    :« Ce sujongkwa de {STRINGID} est vraiment une bonne affaire »
+STR_1599    :« Ce sandwich de {STRINGID} est vraiment une bonne affaire »
+STR_1600    :« Ce cookie de {STRINGID} est vraiment une bonne affaire »
 STR_1601    :
 STR_1602    :
 STR_1603    :
-STR_1604    :« Cette saucisse grillée de {STRINGID} est un très bon choix »
+STR_1604    :« Cette saucisse grillée de {STRINGID} est vraiment une bonne affaire »
 STR_1605    :
 STR_1606    :
 STR_1607    :
@@ -1297,7 +1300,7 @@ STR_1914    :{BLACK}{CURRENCY2DP}
 STR_1915    :{RED}{CURRENCY2DP}
 STR_1916    :{WINDOW_COLOUR_2}Emprunt:
 STR_1917    :{POP16}{POP16}{POP16}{CURRENCY}
-STR_1918    :Impossible d’emprunter d’avantage ! La banque refuse d’augmenter votre emprunt !
+STR_1918    :Impossible d’emprunter d’avantage !
 STR_1919    :Pas assez d’argent disponible !
 STR_1920    :Impossible de rembourser l’emprunt !
 STR_1921    :Commencer une nouvelle partie
@@ -1707,12 +1710,12 @@ STR_2347    :{RED}{STRINGID} s’est noyé !
 STR_2348    :Voir statistiques pour cet employé
 STR_2349    :{WINDOW_COLOUR_2}Salaire : {BLACK}{CURRENCY} par mois
 STR_2350    :{WINDOW_COLOUR_2}Embauché : {BLACK}{MONTHYEAR}
-STR_2351    :{WINDOW_COLOUR_2}Pelouses tondues : {BLACK}{COMMA16}
-STR_2352    :{WINDOW_COLOUR_2}Jardins arrosés : {BLACK}{COMMA16}
-STR_2353    :{WINDOW_COLOUR_2}Déchets nettoyés : {BLACK}{COMMA16}
-STR_2354    :{WINDOW_COLOUR_2}Poubelles vidées : {BLACK}{COMMA16}
-STR_2355    :{WINDOW_COLOUR_2}Attractions réparées : {BLACK}{COMMA16}
-STR_2356    :{WINDOW_COLOUR_2}Attractions inspectées : {BLACK}{COMMA16}
+STR_2351    :{WINDOW_COLOUR_2}Pelouses tondues : {BLACK}{COMMA32}
+STR_2352    :{WINDOW_COLOUR_2}Jardins arrosés : {BLACK}{COMMA32}
+STR_2353    :{WINDOW_COLOUR_2}Déchets nettoyés : {BLACK}{COMMA32}
+STR_2354    :{WINDOW_COLOUR_2}Poubelles vidées : {BLACK}{COMMA32}
+STR_2355    :{WINDOW_COLOUR_2}Attractions réparées : {BLACK}{COMMA32}
+STR_2356    :{WINDOW_COLOUR_2}Attractions inspectées : {BLACK}{COMMA32}
 STR_2358    :Unités
 STR_2359    :Valeurs réelles
 STR_2360    :{WINDOW_COLOUR_2}Résolution d’affichage :
@@ -1959,8 +1962,6 @@ STR_2738    :Musique de titre :
 STR_2739    :Aucune
 STR_2740    :RollerCoaster Tycoon 1
 STR_2741    :RollerCoaster Tycoon 2
-STR_2742    :{SMALLFONT}css50.dat{MEDIUMFONT} introuvable
-STR_2743    :Copiez {SMALLFONT}data/css17.dat{MEDIUMFONT} depuis votre installation de RCT1 en {SMALLFONT}data/css50.dat{MEDIUMFONT} dans celui de RCT2, ou vérifiez que le chemin vers l’installation de RCT1 dans les options avancées est défini correctement.
 STR_2749    :Mon nouveau scénario
 STR_2750    :Déplacer tous les éléments en haut
 STR_2751    :Déplacer tous les éléments en bas
@@ -2233,7 +2234,6 @@ STR_3174    :Cet objet est requis par un autre objet
 STR_3175    :Cet objet est toujours requis
 STR_3176    :Impossible de sélectionner cet objet
 STR_3177    :Impossible de désélectionner cet objet
-STR_3178    :Au moins un objet d’allée doit être sélectionné
 STR_3179    :Au moins un objet de véhicule ou d’attraction doit être sélectionné
 STR_3180    :Sélection d’objets non valide
 STR_3181    :Sélection d’objet — {STRINGID}
@@ -2266,7 +2266,7 @@ STR_3208    :Gestionnaire de voies
 STR_3209    :Retour étape précédente :
 STR_3210    :Passer à l’étape suivante :
 STR_3211    :Taille carte :
-STR_3212    :{POP16}{COMMA16} x {PUSH16}{COMMA16}
+STR_3212    :{POP16}{COMMA16}
 STR_3213    :Impossible de diminuer davantage la taille de la carte
 STR_3214    :Impossible d’augmenter davantage la taille de le carte
 STR_3215    :Trop proche du bord de la carte
@@ -2563,8 +2563,6 @@ STR_5250    :Bouton Quitter de l’écran titre
 STR_5251    :Bouton Options de l’écran titre
 STR_5252    :Fenêtre de sélection de scénario
 STR_5253    :Informations sur le parc
-STR_5254    :Créer
-STR_5255    :Créer une nouvelle séquence titre de zéro
 STR_5256    :Créer un nouveau thème à modifier
 STR_5257    :Créer un nouveau thème d’après l’actuel
 STR_5258    :Supprimer le thème actuel
@@ -2659,75 +2657,10 @@ STR_5373    :Nom {STRINGID}
 STR_5374    :Date {STRINGID}
 STR_5375    :▲
 STR_5376    :▼
-STR_5377    :Sauvegardes
-STR_5378    :Script
-STR_5379    :Passer à la commande suivante
-STR_5380    :Démarrer séquence titre
-STR_5381    :Arrêter séquence titre
-STR_5382    :Redémarrer séquence titre
-STR_5383    :Créer une nouvelle séquence titre d’après l’actuelle
-STR_5384    :Supprimer l’actuelle séquence titre
-STR_5385    :Renommer l’actuelle séquence titre
-STR_5386    :Insérer une nouvelle commande
-STR_5387    :Editer la commande sélectionnée
-STR_5388    :Supprimer la commande sélectionée
-STR_5389    :Passer à la commande sélectionnée dans la séquence titre
-STR_5390    :Déplacer la commande sélectionnée vers le bas
-STR_5391    :Déplacer la commande sélectionnée vers le haut
-STR_5392    :Ajouter une sauvegarde à la séquence titre
-STR_5393    :Retirer la sauvegarde sélectionnée de la séquence titre
-STR_5394    :Renommer la sauvegarde sélectionnée
-STR_5395    :Charger la sauvegarde sélectionnée dans le jeu
-STR_5396    :Recharger la séquence titre si des changements ont été effectués en-dehors du jeu
-STR_5397    :Peut être utilisé uniquement sur l’écran titre
-STR_5398    :Impossible de modifier la séquence titre quand elle joue
-STR_5399    :Appuyez sur le bouton {SMALLFONT}Arrêter{MEDIUMFONT} pour continuer les modifications
-STR_5400    :Impossible de modifier cette séquence titre
-STR_5401    :Créez une nouvelle séquence titre à modifier
-STR_5402    :Impossible de charger la séquence titre
-STR_5403    :Il n’y a peut-être pas de commande de chargement ou d’attente, ou une sauvegarde est peut-être invalide
 STR_5404    :Le nom existe déjà
-STR_5405    :Saisissez un nom pour la sauvegarde
-STR_5406    :Saisissez un nom pour la séquence titre
-STR_5407    :Ajouter
-STR_5408    :Retirer
-STR_5409    :Insérer
-STR_5410    :Editer
-STR_5411    :Recharger
-STR_5412    :Passer à
-STR_5413    :Charger
-STR_5415    :Charger{MOVE_X}{87}{STRING}
-STR_5416    :Charger{MOVE_X}{87}Aucune sauvegarde séléctionné
-STR_5417    :Emplacement
-STR_5418    :Emplacement{MOVE_X}{87}{COMMA16}   {COMMA16}
-STR_5419    :Tourner
-STR_5420    :Tourner{MOVE_X}{87}{COMMA16}
-STR_5421    :Zoomer
-STR_5422    :Zoomer{MOVE_X}{87}{COMMA16}
-STR_5423    :Attendre
-STR_5424    :Attendre{MOVE_X}{87}{UINT16}
-STR_5425    :Redémarrer
-STR_5426    :Fin
-STR_5427    :Coordonnées :
-STR_5428    :Rotations antihoraires :
-STR_5429    :Niveau de zoom :
-STR_5430    :Temps en millisecondes :
-STR_5431    :Sauvegarde à charger :
-STR_5432    :Commande :
-STR_5433    :Séquences de titre
-STR_5434    :Editeur de commande
-STR_5435    :Renommer sauvegarde
-STR_5436    :Editer séquence titre…
-STR_5437    :Aucune sauvegarde sélectionnée
-STR_5438    :Impossible de modifier tant que l’éditeur de commande est ouvert
-STR_5439    :Une commande d’attente d’au moins 4 secondes est requise pour redémarrer
 STR_5440    :Minimiser le plein écran au passage en arrière-plan
 STR_5441    :Identifie les attractions par type de voie, pour que les véhicules puissent être changés plus tard, comme dans RCT1.
 STR_5442    :Eval. du parc :
-STR_5443    :Vitesse{MOVE_X}{87}{STRINGID}
-STR_5444    :Vitesse :
-STR_5445    :Vitesse
-STR_5446    :Obtenir
 STR_5447    :Type {STRINGID}
 STR_5448    :Attraction/véhicule {STRINGID}
 STR_5449    :Diminuer la vitesse de jeu
@@ -2786,8 +2719,6 @@ STR_5503    :Saisir nom d’hôte ou adresse IP :
 STR_5504    :Afficher le statut multijoueur
 STR_5505    :Impossible de se connecter au serveur
 STR_5506    :Les visiteurs ignorent l’intensité
-STR_5508    :Autor. charg. de fichiers avec une empreinte incorrecte
-STR_5509    :Autorise le chargement de scénarios et sauvegardes ayant une empreinte incorrecte, par exemple les scénarios de la démo ou des sauvegardes corrompues
 STR_5510    :Périphérique audio par défaut
 STR_5511    :(UNKNOWN)
 STR_5512    :Sauvegarder partie sous
@@ -2842,8 +2773,6 @@ STR_5560    :Définit l’intervalle d’inspection de toutes les attractions à
 STR_5561    :Le chargement de la langue a échoué
 STR_5562    :ATTENTION !
 STR_5563    :Cette fonctionnalité est actuellement instable, faites attention.
-STR_5564    :Insérer un élément corrompu
-STR_5565    :Insère un élément corrompu au sommet de la case. Ceci va masquer tous les éléments au-dessus de l’élément corrompu.
 STR_5566    :Mot de passe :
 STR_5567    :Afficher dans la liste des serveurs
 STR_5568    :Mot de passe requis
@@ -2971,8 +2900,6 @@ STR_5723    :Forte pluie
 STR_5724    :Orage
 STR_5725    :{BLACK}Change la météo pour :
 STR_5726    :Définit la météo actuelle dans le parc
-STR_5727    :Qual. de mise à l’échelle :
-STR_5731    :Linéaire
 # tooltip for tab in options window
 STR_5734    :Rendu
 STR_5735    :Etat du réseau
@@ -3059,7 +2986,6 @@ STR_5814    :{WINDOW_COLOUR_1}« {STRING} »
 #tooltips
 STR_5815    :Affiche le nombre d’images par seconde durant le jeu
 STR_5816    :Définit le ratio de mise à l’échelle du jeu.{NEWLINE}Utile lors de l’utilisation de résolutions élevées.
-STR_5817    :[Requiert l’affichage matériel]{NEWLINE}Définit le type de mise à l’échelle des graphismes.{NEWLINE}La mise à l’échelle linéaire est lisse mais le résultat est flou. La mise à l’échelle au plus proche voisinage est précise mais peut causer une dégradation mineure des performances.
 STR_5819    :[Requiert l’affichage matériel]{NEWLINE}Met le jeu en pause quand l’overlay Steam est ouvert
 STR_5820    :Minimise le jeu si le focus est perdu en plein écran
 STR_5822    :Active le cycle jour/nuit.{NEWLINE}Chaque cycle dure un mois de jeu.
@@ -3076,7 +3002,7 @@ STR_5832    :Affiche les hauteurs comme des unités génériques au lieu des uni
 STR_5833    :Change le format de date utilisé
 STR_5834    :Sélectionne le périphérique audio que doit utiliser OpenRCT2
 STR_5835    :Coupe le son du jeu si la fenêtre passe à l’arrière-plan
-STR_5836    :Sélectionne la musique du menu principal.{NEWLINE}La musique RCT1 nécessite que vous copiiez et renommiez le fichier {SMALLFONT}data/css17.dat{MEDIUMFONT} de votre dossier RCT1 en data/{SMALLFONT}css50.dat{MEDIUMFONT} dans votre dossier RCT2, ou que vous ayez défini le chemin d’installation de RCT1 dans les options diverses.
+STR_5836    :Sélectionne la musique jouée dans le menu principal.{NEWLINE}Sélectionner le thème de RCT1 nécessite que le chemin d’installation de RCT1 soit défini dans les options avancées.
 STR_5837    :Créer et gérer des thèmes d’interface personnalisés
 STR_5838    :Affiche un bouton séparé pour les options financières dans la barre d’outils
 STR_5839    :Affiche un bouton séparé pour la recherche et développement dans la barre d’outils
@@ -3088,7 +3014,6 @@ STR_5844    :Reste connecté à un serveur même si une désynchronisation ou un
 STR_5845    :Ajoute un bouton pour les outils de débogage dans la barre d’outils.{NEWLINE}Active le raccourci clavier pour la console de développement.
 STR_5846    :Définit la fréquence de la sauvegarde automatique
 STR_5847    :Sélectionne la séquence de parcs utilisée dans le menu principal. Les séquences titre de RCT1/2 requièrent des scénarios importés pour fonctionner.
-STR_5848    :Créer et gérer des séquences titre personnalisées
 STR_5849    :Placer automatiquement les nouveaux employés
 STR_5851    :Définit le délai d’inspection par défaut sur les nouvelles attractions
 STR_5853    :Active/désactive les effets sonores
@@ -3288,7 +3213,6 @@ STR_6047    :Lisser les cases
 STR_6048    :Erreur carte d’élévation
 STR_6049    :Erreur de lecture du PNG
 STR_6050    :Erreur de lecture du bitmap
-STR_6051    :La largeur et la hauteur doivent correspondre
 STR_6052    :Cette carte d’élévation est trop grande et sera coupée
 STR_6053    :Cette carte d’élévation ne peut pas être normalisée
 STR_6054    :Seuls les bitmaps 24 bits sont supportés
@@ -3366,8 +3290,8 @@ STR_6133    :Accéder au décor et aux attractions qui ne sont pas encore invent
 STR_6134    :Effacer le décor
 STR_6135    :Le client a envoyé une requête invalide
 STR_6136    :Le serveur a envoyé une requête invalide
-STR_6137    :OpenRCT2, un clone gratuit et open source de RollerCoaster Tycoon 2.
-STR_6138    :OpenRCT2 est le fruit du travail de nombreux auteurs, une liste complète est disponible dans le fichier {SMALLFONT}contributors.md{MEDIUMFONT}. Pour plus d’informations, visitez {SMALLFONT}http://github.com/OpenRCT2/OpenRCT2{MEDIUMFONT}
+STR_6137    :OpenRCT2, une recréation et amélioration libre et open source de RollerCoaster Tycoon 2.
+STR_6138    :OpenRCT2 est le fruit du travail de nombreuses personnes, une liste complète est disponible via le bouton {SMALLFONT}Contributions{MEDIUMFONT}. Pour plus d’informations, visitez {SMALLFONT}http://github.com/OpenRCT2/OpenRCT2{MEDIUMFONT}
 STR_6139    :Tous les noms des produits et entreprises appartiennent à leurs propriétaires respectifs. L’utilisation de ces derniers n’implique pas d’affiliation ou d’approbation par eux.
 STR_6140    :Journal des changements…
 STR_6141    :Barre d’outils RCT1 du bas
@@ -3387,8 +3311,6 @@ STR_6154    :Pour des raisons de sécurité, il n’est pas recommandé de déma
 STR_6155    :Ni KDialog ni Zenity ne sont installés. Veuillez installer l’un des deux, ou configurez depuis la ligne de commande.
 STR_6156    :Le nom est réservé
 STR_6157    :Console
-STR_6158    :Erreur lors de l’ouverture de ce fichier…{NEWLINE}Version incompatible de RCTC : {COMMA16}
-STR_6159    :Plus proche voisinage
 STR_6160    :{WINDOW_COLOUR_2}Véhicules disponibles : {BLACK}{STRING}
 STR_6161    :Afficher/masquer les lignes de quadrillage
 STR_6162    :Souris folle tournante
@@ -3403,23 +3325,8 @@ STR_6170    :Ajustements de l’interface
 STR_6171    :Chercher
 STR_6172    :Chercher
 STR_6173    :Veuillez indiquer le nom à rechercher :
-STR_6174    :Charger sauvegarde
-STR_6175    :Charger scénario
-STR_6176    :Scénario à charger :
-STR_6177    :Charger{MOVE_X}{87}Aucun scénario sélectionné
-STR_6178    :Charger{MOVE_X}{87}{RED}Scénario manquant
-STR_6179    :Sélectionner
-STR_6180    :Aucune scénario sélectionné
-STR_6181    :{RED}Scénario manquant
-STR_6182    :Suivre{MOVE_X}{87}{STRING}
-STR_6183    :Suivre{MOVE_X}{87}Aucune image-objet sélectionnée
-STR_6184    :Suivre image-objet
-STR_6185    :Sélectionner image-objet
-STR_6186    :Aucune image-objet sélectionnée
-STR_6187    :{OUTLINE}{WINDOW_COLOUR_2}{STRING}
 STR_6188    :Vomi
 STR_6189    :Canard
-STR_6190    :Vous ne pouvez pas sélectionner une image-objet lorsque l’écran titre est actif.
 STR_6191    :Surface
 STR_6192    :Mur
 STR_6193    :{COMMA16} visiteur
@@ -3525,14 +3432,14 @@ STR_6315    :{WINDOW_COLOUR_2}Objectif recherche chemin : {BLACK}{INT32}, {INT3
 STR_6316    :{WINDOW_COLOUR_2}Historique recherche chemin :
 STR_6317    :{BLACK}{INT32}, {INT32}, {INT32} dir {INT32}
 STR_6318    :Desynchronisation réseau détectée.{NEWLINE}Fichier journal : {STRING}
-STR_6319    :Bloc de frein fermé
+STR_6319    :Freins de bloc serrés
 STR_6320    :Indestructible
 STR_6321    :L’ajout est cassé
-STR_6322    :{WINDOW_COLOUR_2}Identifiant image-objet : {BLACK}{INT32}
+STR_6322    :{WINDOW_COLOUR_2}ID de l’entité : {BLACK}{INT32}
 STR_6323    :Simulation
 STR_6324    :Simuler
 STR_6325    :Simule l’attraction
-STR_6326    :Impossible de simuler {POP16}{POP16}{POP16}{STRINGID}…
+STR_6326    :Impossible de simuler {STRINGID}…
 STR_6327    :Fond transparent pour les captures d’écran géantes
 STR_6328    :Quand cette option est activée, les captures d’écran auront un fond transparent plutôt qu’un fond noir
 STR_6329    :{STRING}{STRINGID}
@@ -3541,7 +3448,6 @@ STR_6331    :Créer canards
 STR_6332    :Suppr. canards
 STR_6333    :Augmenter l’échelle
 STR_6334    :Réduire l’échelle
-STR_6335    :Inspecteur de cases — Insérer un élément corrompu
 STR_6336    :Inspecteur de cases — Copier l’élément
 STR_6337    :Inspecteur de cases — Coller l’élément
 STR_6338    :Inspecteur de cases — Supprimer l’élément
@@ -3577,7 +3483,7 @@ STR_6367    :Image de l’animation :
 STR_6368    :Pour des raisons de compatibilité, il n’est pas recommandé d’exécuter OpenRCT2 avec Wine. OpenRCT2 supporte nativement macOS, Linux, FreeBSD et OpenBSD.
 STR_6369    :Autoriser la construction de voies {NEWLINE}à des hauteurs invalides
 STR_6370    :Autorise le placement de morceaux de voie à n’importe quelle hauteur
-STR_6371    :Le chemin spécifié contient une installation de RollerCoaster Tycoon 1, mais le fichier {SMALLFONT}csg1i.dat{MEDIUMFONT} est manquant. Ce fichier doit être copié depuis le CD de RollerCoaster Tycoon 1 vers le dossier {SMALLFONT}data{MEDIUMFONT} de l’installation de RollerCoaster Tycoon 1 sur votre disque dur.
+STR_6371    :Le chemin spécifié contient une installation de RollerCoaster Tycoon 1, mais le fichier {SMALLFONT}csg1i.dat{MEDIUMFONT} est manquant. Ce fichier doit être copié depuis le CD de Looping En Folie ou RCT Deluxe vers le dossier {SMALLFONT}data{MEDIUMFONT} de l’installation de RollerCoaster Tycoon 1 sur votre disque dur.
 STR_6372    :Le chemin spécifié contient une installation de RollerCoaster Tycoon 1, mais cette version n’est pas compatible. OpenRCT2 a besoin d’une installation Looping En Folie ou RCT Deluxe pour pouvoir utiliser les données de RollerCoaster Tycoon 1.
 STR_6373    :Activer/désactiver les collisions
 STR_6374    :C
@@ -3641,10 +3547,10 @@ STR_6431    :Bouton droite souris
 STR_6432    :Bouton souris {INT32}
 STR_6433    :Supprimer
 STR_6434    :Supprimer toutes les combinaisons pour ce raccourci.
-STR_6435    :{WINDOW_COLOUR_2}Vandales arrêtés : {BLACK}{COMMA16}
+STR_6435    :{WINDOW_COLOUR_2}Vandales arrêtés : {BLACK}{COMMA32}
 STR_6436    :Permuter la visibilité
 STR_6437    :Visible
-STR_6438    :V
+STR_6438    :{MOVE_X}{2}👁
 STR_6439    :Inspecteur de cases — Permuter la visibilité
 STR_6440    :Eau transparente
 STR_6441    :Au moins un objet de surface d’allée (hors file d’attente) doit être sélectionné.
@@ -3667,6 +3573,89 @@ STR_6457    :Signaler un bug sur GitHub
 STR_6458    :Suivre sur la vue principale
 STR_6460    :O
 STR_6461    :Orientation
+STR_6462    :Excitation
+STR_6463    :Excitation : {COMMA2DP32}
+STR_6464    :Intensité
+STR_6465    :Intensité : {COMMA2DP32}
+STR_6466    :Nausée
+STR_6467    :Nausée : {COMMA2DP32}
+STR_6468    :Pas encore disponible
+STR_6469    :Ajuster zone de patrouille + petite
+STR_6470    :Ajuster zone de patrouille + grande
+STR_6471    :Végétation transparente
+STR_6472    :Véhicules transparents
+STR_6473    :Supports transparents
+STR_6474    :Visiteurs invisibles
+STR_6475    :Employés invisibles
+STR_6476    :Végétation invisible
+STR_6477    :Décor invisible
+STR_6478    :Allées invisibles
+STR_6479    :Attractions invisibles
+STR_6480    :Véhicules invisibles
+STR_6481    :Options de transparence
+STR_6482    :Options de transparence
+STR_6483    :Ouvrir les options de transparence
+STR_6484    :Végétation transparente
+STR_6485    :Véhicules transparents
+STR_6486    :Visiteurs invisibles
+STR_6487    :Employés invisibles
+STR_6488    :{RED}Les visiteurs se plaignent de la longueur des files d’attente dans votre parc.{NEWLINE}Songez à raccourcir les files problématiques ou à augmenter la capacité des attractions.
+STR_6489    :Erreur : Version de parc incompatible
+STR_6490    :Avertissement : Version de parc semi-compatible
+STR_6491    :Ce parc a été sauvegardé dans une version plus récente d’OpenRCT2. Il a été sauvegardé avec la version {INT32} et requiert au moins la version {INT32}. Vous utilisez la version {INT32}.
+STR_6492    :Ce parc a été sauvegardé dans une ancienne version d’OpenRCT2, et ne peut être ouvert avec cette version. Il a été sauvegardé avec la version {INT32}.
+STR_6493    :Ce parc a été sauvegardé dans une version plus récente d’OpenRCT2, certaines données pourraient être perdues. Il a été sauvegardé avec la version {INT32}, vous utilisez la version {INT32}.
+STR_6494    :Grouper par type d’attraction
+STR_6495    :Groupe les attractions par type au lieu d’afficher chaque véhicule indépendamment.
+STR_6496    :{WINDOW_COLOUR_2}{STRINGID}
+STR_6497    :Cliquez sur une case pour afficher ses éléments.{NEWLINE}Maintenez Ctrl et cliquez sur un élément pour le sélectionner directement.
+STR_6498    :Maintenir la carte carrée
+STR_6499    :Type de véhicule non supporté par le format de conception de voie
+STR_6500    :Éléments de voie non supportés par le format de conception de voie
+STR_6501    :Couleur aléatoire
+STR_6502    :Entrez une valeur entre {COMMA16} et {COMMA16}
+STR_6503    :Au moins un object de station doit être selectionné
+STR_6504    :Au moins une surface de terrain doit être sélectionnée
+STR_6505    :Au moins un bord de terrain doit être sélectionné
+STR_6506    :Grand demi tire-bouchon (gauche)
+STR_6507    :Grand demi tire-bouchon (droite)
+STR_6508    :Demie boucle moyenne (gauche)
+STR_6509    :Demie boucle moyenne (droite)
+STR_6510    :Zero-G roll (gauche)
+STR_6511    :Zero-G roll (droite)
+STR_6512    :Grand zero-G roll (gauche)
+STR_6513    :Grand zero-G roll (droite)
+STR_6514    :Hauteur invalide !
+STR_6515    :{BLACK}RollerCoaster Tycoon 1 pas lié — des images de secours seront utilisées.
+STR_6516    :Un ou plusieurs des objets ajoutés nécessitent que RollerCoaster Tycoon 1 soit lié pour être affichés correctement. Des images de secours seront utilisées.
+STR_6517    :Un ou plusieurs objets de ce parc nécessitent que RollerCoaster Tycoon 1 soit lié pour être affichés correctement. Des images de secours seront utilisées.
+STR_6518    :{BLACK}Survolez un scénario pour afficher sa description et son objectif. Cliquez pour commencer à jouer.
+STR_6519    :Extras
+STR_6520    :Packs de ressources
+STR_6521    :Priorité basse
+STR_6522    :Priorité haute
+STR_6523    :Réduit la priorité du pack de ressources sélectionné
+STR_6524    :Augmente la priorité du pack de ressources sélectionné
+STR_6525    :Recharge toutes les ressources du jeu avec les packs de ressources sélectionnés
+STR_6526    :(graphismes, musiques et effets sonores de base)
+STR_6527    :Compétitions
+STR_6528    :Paramètres de voie invalides !
+STR_6529    :Paramètre de palette de couleurs invalide !
+STR_6530    :User Created Expansion Set
+STR_6531    :La machine temporelle
+STR_6532    :Le monde de Katy
+STR_6533    :{WINDOW_COLOUR_2}Indice d’excitation : {BLACK}-{COMMA16}%
+STR_6534    :{WINDOW_COLOUR_2}Indice d’intensité : {BLACK}-{COMMA16}%
+STR_6535    :{WINDOW_COLOUR_2}Indice de nausée : {BLACK}-{COMMA16}%
+STR_6536    :Ce parc a été sauvegardé dans une version plus récente d’OpenRCT2. Il a été sauvegardé avec la version {INT32}, vous utilisez la version {INT32}.
+STR_6537    :Permettre l’utilisation d’allées normales{NEWLINE}dans les files d’attente
+STR_6538    :Affiche les allées normales dans le menu déroulant des files d’attente de la fenêtre des allées
+STR_6539    :Freins serrés
+STR_6540    :{WINDOW_COLOUR_2}Remerciements particuliers aux entreprises suivantes pour l’autorisation d’utilisation de leur image :
+STR_6541    :{WINDOW_COLOUR_2}Rocky Mountain Construction Group, Josef Wiegand GmbH & Co. KG
+STR_6542    :Contributions
+STR_6543    :Contributions…
+STR_6544    :Un emprunt ne peut pas être négatif !
 
 #############
 # Scenarios #
@@ -4412,67 +4401,116 @@ STR_SCNR    :Monde de Panda
 STR_PARK    :Monde de Panda
 STR_DTLS    :Ajoutez davantage d’attractions et attirez plus de visiteurs avec ce parc autour du thème du panda
 
+<Tycoon Park>
+STR_SCNR    :Parc Tycoon
+STR_PARK    :Parc Tycoon
+STR_DTLS    :
+
+###
+<UCES Halloween>
+STR_SCNR    :Crête du cimetière
+STR_PARK    :Crête du cimetière
+STR_DTLS    :C’est Halloween, l’Halloween UCES, les citrouilles hurlent au milieu de la nuit ! Ce cimetière est en mauvaise posture et vous devez le sauver, tout en laissant les défunts reposer en paix ! Pouvez-vous garder les fantômes dans leurs tombes et faire frissonner vos clients ?{NEWLINE}Par : Squid
+
+###############################################################################
+## UCES: The Time Machine (2003)
+###############################################################################
+<Lighthouse of Alexandria by Katatude for UCES>
+STR_SCNR    :Le Phare d’Alexandrie
+STR_PARK    :Le Phare d’Alexandrie
+STR_DTLS    :Alexandre a bâti la cité ; les Grecs, les Romains, les Égyptiens y ont laissé leur marque. Mais le plus grand accomplissement était une merveille de l’ancien monde — le Phare. Venez visiter et bâtir un parc !{NEWLINE}Par : Katatude
+
+<Cleveland's Luna Park>
+STR_SCNR    :Luna Park, Cleveland
+STR_PARK    :Luna Park
+STR_DTLS    :Comme à son jour d’ouverture — 18 mai 1905.{NEWLINE}Par : Aetherwave
+
+<Mount Vesuvius 1700 A.D. by Katatude for UCES>
+STR_SCNR    :Le mont Vésuve
+STR_PARK    :Le mont Vésuve
+STR_DTLS    :Pompeii and Herculaneum were buried by Mt. Vesuvius in 79 A.D. Visit the excavations and build a park!{NEWLINE}Author: Katatude
+
+<The Sandbox by Katatude for UCES>
+STR_SCNR    :Le bac à sable
+STR_PARK    :Le bac à sable
+STR_DTLS    :Ce que tout le monde veut — un bac à sable ! Alors prenez votre pelle et votre rateau et contruisez un parc !{NEWLINE}Par : Katatude
+
+<Niagara Falls & Gorge by Katatude for UCES>
+STR_SCNR    :Gorges et chutes du Niagara
+STR_PARK    :Chutes du Niagara
+STR_DTLS    :Les chutes américaines, les chutes du Voile de la Mariée et les chutes du Fer-à-Cheval sur la frontière du Niagara, 1850.{NEWLINE}Par : Katatude
+
+<Rocky Mountain Miners>
+STR_SCNR    :Mineurs des montagnes rocailleuses
+STR_PARK    :Mineurs des montagnes rocailleuses
+STR_DTLS    :Un glissement de terrain a endommagé votre chemin de fer. Vos travailleurs sont partis prospecter. Y a-t-il de l’or dans les montagnes russes ?{NEWLINE}Par : Squid, Buckone, Fossil
+
+<The Time Machine by Katatude for UCES>
+STR_SCNR    :La machine temporelle
+STR_PARK    :La machine temporelle
+STR_DTLS    :La machine temporelle. Construite pour partir — quand vous voulez, où vous voulez. L’éternité attends. Tout est relatif.{NEWLINE}Par : Katatude
+
+<Tower of Babel>
+STR_SCNR    :La tour de Babel
+STR_PARK    :La tour de Babel
+STR_DTLS    :Ouaah ! Regardez où la machine temporelle nous a emmené ! Où est tout le monde ?{NEWLINE}Par : Fossil
+
+<Transformation>
+STR_SCNR    :Transformation
+STR_PARK    :Transformation
+STR_DTLS    :Nous vous attendions…{NEWLINE}Par : Fossil
+
+<Urbis Incognitus>
+STR_SCNR    :Urbis Incognitus
+STR_PARK    :Urbis Incognitus
+STR_DTLS    :Les Romains sont lassés des combats de gladiateurs ennuyants. Donnez-leur plus de frissons, faîtes d’une cité romaine le meilleur parc d’attractions de tous les temps !{NEWLINE}Par : Kaffe
+
+###############################################################################
+## UCES: Katy’s Dreamworld (2003)
+###############################################################################
+
+<Beneath the Christmas Tree by Katatude for UCES>
+STR_SCNR    :Sous le sapin de Noël
+STR_PARK    :Pays de l’hiver
+STR_DTLS    :Maman a construit cette scène sous notre sapin. Maintenant elle veut qu’un parc y soit construit ! Pouvez-vous aider ?{NEWLINE}Par : Katatude
+
+<Bigrock Blast>
+STR_SCNR    :Explosion à Groscailloux
+STR_PARK    :Explosion à Groscailloux
+STR_DTLS    :Après une explosion à la Compagnie de Minage de Groscailloux, les habitants de Groscailloux doivent bâtir un parc d’attractions pour garder leur ville vivante.{NEWLINE}Par : rbarclay & buckone
+
+<Camp Mockingbird for UCES by Katatude>
+STR_SCNR    :Camp du geai moqueur
+STR_PARK    :Camp du geai moqueur
+STR_DTLS    :Seulement 500€ par semaine pour ce camp d’été ! Cassez votre tirelire et venez vous amuser et construire un parc.{NEWLINE}Par : Katatude
+
+<Choo Choo Town>
+STR_SCNR    :Tchoutchouville
+STR_PARK    :Tchoutchouville
+STR_DTLS    :Maman ! Papa ! Je veux aller à Tchoutchouville !{NEWLINE}Par : Fossil
+
+<Dragon Islands>
+STR_SCNR    :Archipel du dragon
+STR_PARK    :Archipel du dragon
+STR_DTLS    :Archipel du dragon ? Je ne suis pas sûr de vouloir y aller…{NEWLINE}Par : Fossil
+
+<Kiddy Karnival II>
+STR_SCNR    :Carnaval des enfants II
+STR_PARK    :Carnaval des enfants
+STR_DTLS    :Eh les enfants ! Amusons-nous !{NEWLINE}Par : Piehead & Fossil
+
+<Sand Dune>
+STR_SCNR    :Dune ensablée
+STR_PARK    :Dune ensablée
+STR_DTLS    :En tant que propriétaire d’un petit parc, vous avez acheté un grand terrain le long de la plage pour vous étendre et attirer plus de visiteurs dans ces magnifiques dunes de sable, mais attention : vous ne pouvez pas perturber de fragile écosystème.{NEWLINE}Par : rbarclay
+
 ###########
 # Scenery #
 ###########
 
 ## Start OpenRCT2 Official
 
-[TTPIRF02]
-STR_NAME    :Toit
-
-[TTPIRF03]
-STR_NAME    :Toit
-
-[TTPIRF04]
-STR_NAME    :Toit
-
 [TTPIRF05]
 STR_NAME    :Toit
-
-[TTPIRF07]
-STR_NAME    :Toit
-
-[TTPIRF08]
-STR_NAME    :Toit
-
-[TTRFWD01]
-STR_NAME    :Toit
-
-[TTRFWD02]
-STR_NAME    :Toit
-
-[TTRFWD03]
-STR_NAME    :Toit
-
-[TTRFWD04]
-STR_NAME    :Toit
-
-[TTRFWD05]
-STR_NAME    :Toit
-
-[TTRFWD06]
-STR_NAME    :Toit
-
-[TTRFWD07]
-STR_NAME    :Toit
-
-[TTRFWD08]
-STR_NAME    :Toit
-
-[TTRFGL01]
-STR_NAME    :Toit en verre
-
-[TTRFGL02]
-STR_NAME    :Toit en verre
-
-[TTRFGL03]
-STR_NAME    :Toit en verre
-
-[ACWW33]
-STR_NAME    :Tableau d’affichage en bois
-
-[ACWWF32]
-STR_NAME    :Tableau d’affichage en bois
 
 ## End OpenRCT2 Official

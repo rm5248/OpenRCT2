@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2021 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -20,6 +20,7 @@
 #include "../entity/Particle.h"
 #include "../entity/Staff.h"
 #include "../interface/Viewport.h"
+#include "../profiling/Profiling.h"
 #include "../ride/RideData.h"
 #include "../ride/TrackDesign.h"
 #include "../ride/Vehicle.h"
@@ -33,18 +34,20 @@
  * Paint Quadrant
  *  rct2: 0x0069E8B0
  */
-void EntityPaintSetup(paint_session& session, const CoordsXY& pos)
+void EntityPaintSetup(PaintSession& session, const CoordsXY& pos)
 {
-    if (!map_is_location_valid(pos))
+    PROFILED_FUNCTION();
+
+    if (!MapIsLocationValid(pos))
     {
         return;
     }
-    if (gTrackDesignSaveMode || (session.ViewFlags & VIEWPORT_FLAG_INVISIBLE_SPRITES))
+    if (gTrackDesignSaveMode || (session.ViewFlags & VIEWPORT_FLAG_HIDE_ENTITIES))
     {
         return;
     }
 
-    rct_drawpixelinfo* dpi = &session.DPI;
+    DrawPixelInfo* dpi = &session.DPI;
     if (dpi->zoom_level > ZoomLevel{ 2 })
     {
         return;
@@ -52,7 +55,7 @@ void EntityPaintSetup(paint_session& session, const CoordsXY& pos)
 
     const bool highlightPathIssues = (session.ViewFlags & VIEWPORT_FLAG_HIGHLIGHT_PATH_ISSUES);
 
-    for (const auto* spr : EntityTileList(pos))
+    for (auto* spr : EntityTileList(pos))
     {
         if (highlightPathIssues)
         {
@@ -82,11 +85,11 @@ void EntityPaintSetup(paint_session& session, const CoordsXY& pos)
             {
                 continue;
             }
-            if (entityPos.x < gClipSelectionA.x || entityPos.x > gClipSelectionB.x)
+            if (entityPos.x < gClipSelectionA.x || entityPos.x > (gClipSelectionB.x + COORDS_XY_STEP - 1))
             {
                 continue;
             }
-            if (entityPos.y < gClipSelectionA.y || entityPos.y > gClipSelectionB.y)
+            if (entityPos.y < gClipSelectionA.y || entityPos.y > (gClipSelectionB.y + COORDS_XY_STEP - 1))
             {
                 continue;
             }
@@ -105,7 +108,7 @@ void EntityPaintSetup(paint_session& session, const CoordsXY& pos)
         image_direction += spr->sprite_direction;
         image_direction &= 0x1F;
 
-        session.CurrentlyDrawnItem = spr;
+        session.CurrentlyDrawnEntity = spr;
         session.SpritePosition.x = entityPos.x;
         session.SpritePosition.y = entityPos.y;
         session.InteractionType = ViewportInteractionItem::Entity;
@@ -114,12 +117,10 @@ void EntityPaintSetup(paint_session& session, const CoordsXY& pos)
         {
             case EntityType::Vehicle:
                 spr->As<Vehicle>()->Paint(session, image_direction);
-#ifdef __ENABLE_LIGHTFX__
-                if (lightfx_for_vehicles_is_available())
+                if (LightFXForVehiclesIsAvailable())
                 {
-                    lightfx_add_lights_magic_vehicle(spr->As<Vehicle>());
+                    LightFXAddLightsMagicVehicle(spr->As<Vehicle>());
                 }
-#endif
                 break;
             case EntityType::Guest:
             case EntityType::Staff:

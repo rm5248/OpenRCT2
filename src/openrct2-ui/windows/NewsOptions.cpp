@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -8,69 +8,72 @@
  *****************************************************************************/
 
 #include <cstddef>
-#include <iterator>
 #include <openrct2-ui/interface/Widget.h>
 #include <openrct2-ui/windows/Window.h>
 #include <openrct2/config/Config.h>
 #include <openrct2/drawing/Drawing.h>
-#include <openrct2/localisation/Localisation.h>
 #include <openrct2/sprites.h>
 
-static constexpr const rct_string_id WINDOW_TITLE = STR_NOTIFICATION_SETTINGS;
+static constexpr const StringId WINDOW_TITLE = STR_NOTIFICATION_SETTINGS;
 static constexpr const int32_t WH = 300;
 static constexpr const int32_t WW = 400;
 
 // clang-format off
-enum {
+enum
+{
     NOTIFICATION_CATEGORY_PARK,
     NOTIFICATION_CATEGORY_RIDE,
-    NOTIFICATION_CATEGORY_GUEST
+    NOTIFICATION_CATEGORY_GUEST,
+    NOTIFICATION_CATEGORY_COUNT
 };
 
-struct NotificationDef {
+struct NotificationDef
+{
     uint8_t category;
-    rct_string_id caption;
+    StringId caption;
     size_t config_offset;
 };
 
 static constexpr const NotificationDef NewsItemOptionDefinitions[] = {
-    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_AWARD,                        offsetof(NotificationConfiguration, park_award)                         },
-    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_MARKETING_CAMPAIGN_FINISHED,  offsetof(NotificationConfiguration, park_marketing_campaign_finished)   },
-    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_WARNINGS,                     offsetof(NotificationConfiguration, park_warnings)                      },
-    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_RATING_WARNINGS,              offsetof(NotificationConfiguration, park_rating_warnings)               },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_BROKEN_DOWN,                  offsetof(NotificationConfiguration, ride_broken_down)                   },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CRASHED,                      offsetof(NotificationConfiguration, ride_crashed)                       },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CASUALTIES,                   offsetof(NotificationConfiguration, ride_casualties)                    },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_WARNINGS,                     offsetof(NotificationConfiguration, ride_warnings)                      },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_RESEARCHED,                   offsetof(NotificationConfiguration, ride_researched)                    },
-    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_VEHICLE_STALLED,              offsetof(NotificationConfiguration, ride_stalled_vehicles)              },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_WARNINGS,                    offsetof(NotificationConfiguration, guest_warnings)                     },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LEFT_PARK,                   offsetof(NotificationConfiguration, guest_left_park)                    },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_QUEUING_FOR_RIDE,            offsetof(NotificationConfiguration, guest_queuing_for_ride)             },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_ON_RIDE,                     offsetof(NotificationConfiguration, guest_on_ride)                      },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LEFT_RIDE,                   offsetof(NotificationConfiguration, guest_left_ride)                    },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_BOUGHT_ITEM,                 offsetof(NotificationConfiguration, guest_bought_item)                  },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_USED_FACILITY,               offsetof(NotificationConfiguration, guest_used_facility)                },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_DIED,                        offsetof(NotificationConfiguration, guest_died)                         },
+    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_AWARD,                        offsetof(NotificationConfiguration, ParkAward)                          },
+    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_MARKETING_CAMPAIGN_FINISHED,  offsetof(NotificationConfiguration, ParkMarketingCampaignFinished)      },
+    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_WARNINGS,                     offsetof(NotificationConfiguration, ParkWarnings)                       },
+    { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_RATING_WARNINGS,              offsetof(NotificationConfiguration, ParkRatingWarnings)                 },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_BROKEN_DOWN,                  offsetof(NotificationConfiguration, RideBrokenDown)                     },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CRASHED,                      offsetof(NotificationConfiguration, RideCrashed)                        },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CASUALTIES,                   offsetof(NotificationConfiguration, RideCasualties)                     },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_WARNINGS,                     offsetof(NotificationConfiguration, RideWarnings)                       },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_RESEARCHED,                   offsetof(NotificationConfiguration, RideResearched)                     },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_VEHICLE_STALLED,              offsetof(NotificationConfiguration, RideStalledVehicles)                },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_WARNINGS,                    offsetof(NotificationConfiguration, GuestWarnings)                      },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LEFT_PARK,                   offsetof(NotificationConfiguration, GuestLeftPark)                      },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_QUEUING_FOR_RIDE,            offsetof(NotificationConfiguration, GuestQueuingForRide)                },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_ON_RIDE,                     offsetof(NotificationConfiguration, GuestOnRide)                        },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LEFT_RIDE,                   offsetof(NotificationConfiguration, GuestLeftRide)                      },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_BOUGHT_ITEM,                 offsetof(NotificationConfiguration, GuestBoughtItem)                    },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_USED_FACILITY,               offsetof(NotificationConfiguration, GuestUsedFacility)                  },
+    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_DIED,                        offsetof(NotificationConfiguration, GuestDied)                          },
 };
 
-enum WindowNewsOptionsWidgetIdx {
+enum WindowNewsOptionsWidgetIdx
+{
     WIDX_BACKGROUND,
     WIDX_TITLE,
     WIDX_CLOSE,
     WIDX_TAB_CONTENT_PANEL,
-    WIDX_TAB_PARK,
+    WIDX_FIRST_TAB,
+    WIDX_TAB_PARK = WIDX_FIRST_TAB,
     WIDX_TAB_RIDE,
     WIDX_TAB_GUEST,
     WIDX_CHECKBOX_0
 };
 
-static rct_widget window_news_options_widgets[] = {
+static Widget WindowNewsOptionsWidgets[] = {
     WINDOW_SHIM(WINDOW_TITLE, WW, WH),
-    MakeWidget({ 0, 43}, {400, 257}, WindowWidgetType::Resize,   WindowColour::Secondary), // tab content panel
-    MakeTab   ({ 3, 17}                                                   ), // tab 1
-    MakeTab   ({34, 17}                                                   ), // tab 2
-    MakeTab   ({65, 17}                                                   ), // tab 2
+    MakeWidget({ 0, 43}, {400, 257}, WindowWidgetType::Resize,   WindowColour::Secondary), // Tab content panel
+    MakeTab   ({ 3, 17}                                                                 ), // Park tab
+    MakeTab   ({34, 17}                                                                 ), // Ride tab
+    MakeTab   ({65, 17}                                                                 ), // Guest tab
     MakeWidget({ 7, 49}, {343,  14}, WindowWidgetType::Checkbox, WindowColour::Tertiary ),
     MakeWidget({ 0,  0}, {343,  14}, WindowWidgetType::Checkbox, WindowColour::Tertiary ),
     MakeWidget({ 0,  0}, {343,  14}, WindowWidgetType::Checkbox, WindowColour::Tertiary ),
@@ -82,212 +85,193 @@ static rct_widget window_news_options_widgets[] = {
     MakeWidget({ 0,  0}, {343,  14}, WindowWidgetType::Checkbox, WindowColour::Tertiary ),
     WIDGETS_END,
 };
-
-static void WindowNewsOptionsMouseup(rct_window *w, rct_widgetindex widgetIndex);
-static void WindowNewsOptionsUpdate(rct_window *w);
-static void WindowNewsOptionsInvalidate(rct_window *w);
-static void WindowNewsOptionsPaint(rct_window *w, rct_drawpixelinfo *dpi);
-
-static rct_window_event_list window_news_options_events([](auto& events)
-{
-    events.mouse_up = &WindowNewsOptionsMouseup;
-    events.update = &WindowNewsOptionsUpdate;
-    events.invalidate = &WindowNewsOptionsInvalidate;
-    events.paint = &WindowNewsOptionsPaint;
-});
 // clang-format on
 
-static void WindowNewsOptionsSetPage(rct_window* w, int32_t page);
-static void WindowNewsOptionsDrawTabImages(rct_window* w, rct_drawpixelinfo* dpi);
-static bool* GetNotificationValuePtr(const NotificationDef* ndef);
-
-rct_window* WindowNewsOptionsOpen()
+class NewsOptionsWindow final : public Window
 {
-    rct_window* window;
-
-    // Check if window is already open
-    window = window_bring_to_front_by_class(WC_NOTIFICATION_OPTIONS);
-    if (window == nullptr)
+public:
+    void OnOpen() override
     {
-        window = WindowCreateCentred(400, 300, &window_news_options_events, WC_NOTIFICATION_OPTIONS, 0);
-        window->widgets = window_news_options_widgets;
-        window->enabled_widgets = (1ULL << WIDX_CLOSE) | (1ULL << WIDX_TAB_PARK) | (1ULL << WIDX_TAB_RIDE)
-            | (1ULL << WIDX_TAB_GUEST);
-        WindowInitScrollWidgets(window);
-        window->colours[0] = COLOUR_GREY;
-        window->colours[1] = COLOUR_LIGHT_BLUE;
-        window->colours[2] = COLOUR_LIGHT_BLUE;
+        widgets = WindowNewsOptionsWidgets;
+        InitScrollWidgets();
+        colours[0] = COLOUR_GREY;
+        colours[1] = COLOUR_LIGHT_BLUE;
+        colours[2] = COLOUR_LIGHT_BLUE;
     }
 
-    return window;
-}
-
-static void WindowNewsOptionsMouseup(rct_window* w, rct_widgetindex widgetIndex)
-{
-    switch (widgetIndex)
+    void OnMouseUp(WidgetIndex widgetIndex) override
     {
-        case WIDX_CLOSE:
-            window_close(w);
-            break;
-        case WIDX_TAB_PARK:
-        case WIDX_TAB_RIDE:
-        case WIDX_TAB_GUEST:
-            WindowNewsOptionsSetPage(w, widgetIndex - WIDX_TAB_PARK);
-            break;
-        default:
+        switch (widgetIndex)
         {
-            int32_t checkBoxIndex = widgetIndex - WIDX_CHECKBOX_0;
-            if (checkBoxIndex >= 0)
+            case WIDX_CLOSE:
+                Close();
+                break;
+            case WIDX_TAB_PARK:
+            case WIDX_TAB_RIDE:
+            case WIDX_TAB_GUEST:
+                SetPage(widgetIndex - WIDX_FIRST_TAB);
+                break;
+            default:
             {
-                int32_t matchIndex = 0;
-                for (size_t i = 0; i < std::size(NewsItemOptionDefinitions); i++)
+                int32_t checkBoxIndex = widgetIndex - WIDX_CHECKBOX_0;
+                if (checkBoxIndex >= 0)
                 {
-                    const NotificationDef* ndef = &NewsItemOptionDefinitions[i];
-                    if (ndef->category != w->page)
-                        continue;
-
-                    if (matchIndex == checkBoxIndex)
+                    int32_t matchIndex = 0;
+                    for (size_t i = 0; i < std::size(NewsItemOptionDefinitions); i++)
                     {
-                        // Toggle value
-                        bool* configValue = GetNotificationValuePtr(ndef);
-                        *configValue = !(*configValue);
+                        const NotificationDef* ndef = &NewsItemOptionDefinitions[i];
+                        if (ndef->category != page)
+                            continue;
 
-                        config_save_default();
+                        if (matchIndex == checkBoxIndex)
+                        {
+                            // Toggle value
+                            bool* configValue = GetNotificationValuePtr(ndef);
+                            *configValue = !(*configValue);
 
-                        widget_invalidate(w, widgetIndex);
-                        break;
+                            ConfigSaveDefault();
+
+                            InvalidateWidget(widgetIndex);
+                            break;
+                        }
+                        matchIndex++;
                     }
-                    matchIndex++;
+                }
+                break;
+            }
+        }
+    }
+
+    void OnUpdate() override
+    {
+        // Tab animation
+        frame_no++;
+        InvalidateWidget(WIDX_FIRST_TAB + page);
+    }
+
+    void OnPrepareDraw() override
+    {
+        SetPressedTab();
+
+        // Set checkboxes
+        const auto& baseCheckBox = widgets[WIDX_CHECKBOX_0];
+        int32_t y = baseCheckBox.top;
+
+        int32_t checkboxWidgetIndex = WIDX_CHECKBOX_0;
+        Widget* checkboxWidget = &widgets[checkboxWidgetIndex];
+        for (size_t i = 0; i < std::size(NewsItemOptionDefinitions); i++)
+        {
+            const NotificationDef* ndef = &NewsItemOptionDefinitions[i];
+            if (ndef->category != page)
+                continue;
+
+            checkboxWidget->type = WindowWidgetType::Checkbox;
+            checkboxWidget->left = baseCheckBox.left;
+            checkboxWidget->right = baseCheckBox.right;
+            checkboxWidget->top = y;
+            checkboxWidget->bottom = checkboxWidget->top + LIST_ROW_HEIGHT + 3;
+            checkboxWidget->text = ndef->caption;
+
+            const bool* configValue = GetNotificationValuePtr(ndef);
+            SetCheckboxValue(checkboxWidgetIndex, *configValue);
+
+            checkboxWidgetIndex++;
+            checkboxWidget++;
+            y += LIST_ROW_HEIGHT + 3;
+        }
+
+        // Remove unused checkboxes
+        while (checkboxWidget->type != WindowWidgetType::Last)
+        {
+            checkboxWidget->type = WindowWidgetType::Empty;
+            checkboxWidgetIndex++;
+            checkboxWidget++;
+        }
+
+        // Resize window to fit checkboxes exactly
+        y += 3;
+
+        if (height != y)
+        {
+            Invalidate();
+            height = y;
+            widgets[WIDX_BACKGROUND].bottom = y - 1;
+            widgets[WIDX_TAB_CONTENT_PANEL].bottom = y - 1;
+            Invalidate();
+        }
+    }
+
+    void OnDraw(DrawPixelInfo& dpi) override
+    {
+        DrawWidgets(dpi);
+        DrawTabImages(&dpi);
+    }
+
+private:
+    void SetPage(int32_t p)
+    {
+        if (page != p)
+        {
+            page = p;
+            frame_no = 0;
+            Invalidate();
+        }
+    }
+
+    void DrawTabImages(DrawPixelInfo* dpi)
+    {
+        DrawTabImage(dpi, NOTIFICATION_CATEGORY_PARK, SPR_TAB_PARK);
+        DrawTabImage(dpi, NOTIFICATION_CATEGORY_RIDE, SPR_TAB_RIDE_0);
+        DrawTabImage(dpi, NOTIFICATION_CATEGORY_GUEST, SPR_TAB_GUESTS_0);
+    }
+
+    void DrawTabImage(DrawPixelInfo* dpi, int32_t p, int32_t spriteIndex)
+    {
+        WidgetIndex widgetIndex = WIDX_FIRST_TAB + p;
+
+        if (!WidgetIsDisabled(*this, widgetIndex))
+        {
+            if (page == p)
+            {
+                int32_t numFrames = TabAnimationFrames[page];
+                if (numFrames > 1)
+                {
+                    int32_t frame = frame_no / TabAnimationDivisor[page];
+                    spriteIndex += (frame % numFrames);
                 }
             }
-            break;
+
+            const auto& widget = widgets[widgetIndex];
+            GfxDrawSprite(dpi, ImageId(spriteIndex), windowPos + ScreenCoordsXY{ widget.left, widget.top });
         }
     }
-}
 
-static void WindowNewsOptionsUpdate(rct_window* w)
-{
-    w->frame_no++;
-    widget_invalidate(w, WIDX_TAB_PARK + w->page);
-}
-
-static void WindowNewsOptionsInvalidate(rct_window* w)
-{
-    // Set pressed tab
-    w->pressed_widgets &= ~(1ULL << WIDX_TAB_PARK);
-    w->pressed_widgets &= ~(1ULL << WIDX_TAB_RIDE);
-    w->pressed_widgets &= ~(1ULL << WIDX_TAB_GUEST);
-    w->pressed_widgets |= (1ULL << (WIDX_TAB_PARK + w->page));
-
-    // Set checkboxes
-    const auto& baseCheckBox = w->widgets[WIDX_CHECKBOX_0];
-    int32_t y = baseCheckBox.top;
-
-    int32_t checkboxWidgetIndex = WIDX_CHECKBOX_0;
-    rct_widget* checkboxWidget = &w->widgets[checkboxWidgetIndex];
-    for (size_t i = 0; i < std::size(NewsItemOptionDefinitions); i++)
+    void SetPressedTab()
     {
-        const NotificationDef* ndef = &NewsItemOptionDefinitions[i];
-        if (ndef->category != w->page)
-            continue;
-
-        w->enabled_widgets |= (1ULL << checkboxWidgetIndex);
-
-        checkboxWidget->type = WindowWidgetType::Checkbox;
-        checkboxWidget->left = baseCheckBox.left;
-        checkboxWidget->right = baseCheckBox.right;
-        checkboxWidget->top = y;
-        checkboxWidget->bottom = checkboxWidget->top + LIST_ROW_HEIGHT + 3;
-        checkboxWidget->text = ndef->caption;
-
-        const bool* configValue = GetNotificationValuePtr(ndef);
-        WidgetSetCheckboxValue(w, checkboxWidgetIndex, *configValue);
-
-        checkboxWidgetIndex++;
-        checkboxWidget++;
-        y += LIST_ROW_HEIGHT + 3;
+        for (int32_t i = 0; i < NOTIFICATION_CATEGORY_COUNT; i++)
+            pressed_widgets &= ~(1 << (WIDX_FIRST_TAB + i));
+        pressed_widgets |= 1LL << (WIDX_FIRST_TAB + page);
     }
 
-    // Remove unused checkboxes
-    while (checkboxWidget->type != WindowWidgetType::Last)
+    bool* GetNotificationValuePtr(const NotificationDef* ndef)
     {
-        w->enabled_widgets &= ~(1ULL << checkboxWidgetIndex);
-
-        checkboxWidget->type = WindowWidgetType::Empty;
-        checkboxWidgetIndex++;
-        checkboxWidget++;
+        bool* configValue = reinterpret_cast<bool*>(reinterpret_cast<size_t>(&gConfigNotifications) + ndef->config_offset);
+        return configValue;
     }
 
-    // Resize window to fit checkboxes exactly
-    y += 3;
-
-    if (w->height != y)
-    {
-        w->Invalidate();
-        w->height = y;
-        w->widgets[WIDX_BACKGROUND].bottom = y - 1;
-        w->widgets[WIDX_TAB_CONTENT_PANEL].bottom = y - 1;
-        w->Invalidate();
-    }
-}
-
-static void WindowNewsOptionsPaint(rct_window* w, rct_drawpixelinfo* dpi)
-{
-    WindowDrawWidgets(w, dpi);
-    WindowNewsOptionsDrawTabImages(w, dpi);
-}
-
-static void WindowNewsOptionsSetPage(rct_window* w, int32_t page)
-{
-    if (w->page != page)
-    {
-        w->page = page;
-        w->frame_no = 0;
-        w->Invalidate();
-    }
-}
-
-const int32_t window_news_option_tab_animation_divisor[] = {
-    1,
-    4,
-    4,
-};
-const int32_t window_news_option_tab_animation_frames[] = {
-    1,
-    16,
-    8,
+    static constexpr int32_t TabAnimationDivisor[3] = {
+        1, // Park
+        4, // Ride
+        4, // Guest
+    };
+    static constexpr int32_t TabAnimationFrames[3] = {
+        1,  // Park
+        16, // Ride
+        8,  // Guest
+    };
 };
 
-static void WindowNewsOptionsDrawTabImage(rct_window* w, rct_drawpixelinfo* dpi, int32_t page, int32_t spriteIndex)
+WindowBase* WindowNewsOptionsOpen()
 {
-    rct_widgetindex widgetIndex = WIDX_TAB_PARK + page;
-
-    if (!(w->disabled_widgets & (1LL << widgetIndex)))
-    {
-        if (w->page == page)
-        {
-            int32_t numFrames = window_news_option_tab_animation_frames[w->page];
-            if (numFrames > 1)
-            {
-                int32_t frame = w->frame_no / window_news_option_tab_animation_divisor[w->page];
-                spriteIndex += (frame % numFrames);
-            }
-        }
-
-        const auto& widget = w->widgets[widgetIndex];
-        gfx_draw_sprite(dpi, ImageId(spriteIndex), w->windowPos + ScreenCoordsXY{ widget.left, widget.top });
-    }
-}
-
-static void WindowNewsOptionsDrawTabImages(rct_window* w, rct_drawpixelinfo* dpi)
-{
-    WindowNewsOptionsDrawTabImage(w, dpi, NOTIFICATION_CATEGORY_PARK, SPR_TAB_PARK);
-    WindowNewsOptionsDrawTabImage(w, dpi, NOTIFICATION_CATEGORY_RIDE, SPR_TAB_RIDE_0);
-    WindowNewsOptionsDrawTabImage(w, dpi, NOTIFICATION_CATEGORY_GUEST, SPR_TAB_GUESTS_0);
-}
-
-static bool* GetNotificationValuePtr(const NotificationDef* ndef)
-{
-    bool* configValue = reinterpret_cast<bool*>(reinterpret_cast<size_t>(&gConfigNotifications) + ndef->config_offset);
-    return configValue;
+    return WindowFocusOrCreate<NewsOptionsWindow>(WindowClass::NotificationOptions, WW, WH, WF_CENTRE_SCREEN);
 }

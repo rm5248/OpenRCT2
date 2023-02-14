@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2021 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -30,13 +30,13 @@ enum WindowClearSceneryWidgetIdx
     WIDX_FOOTPATH
 };
 // clang-format on
-static constexpr const rct_string_id WINDOW_TITLE = STR_CLEAR_SCENERY;
+static constexpr const StringId WINDOW_TITLE = STR_CLEAR_SCENERY;
 static constexpr const int32_t WW = 98;
 static constexpr const int32_t WH = 94;
 
 static constexpr ScreenSize CLEAR_SCENERY_BUTTON = { 24, 24 };
 
-static rct_widget window_clear_scenery_widgets[] = {
+static Widget window_clear_scenery_widgets[] = {
     WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     MakeWidget(
         { 27, 17 }, { 44, 32 }, WindowWidgetType::ImgBtn, WindowColour::Primary, SPR_LAND_TOOL_SIZE_0, STR_NONE), // preview box
@@ -64,11 +64,9 @@ public:
     void OnOpen() override
     {
         widgets = window_clear_scenery_widgets;
-        enabled_widgets = (1ULL << WIDX_CLOSE) | (1ULL << WIDX_INCREMENT) | (1ULL << WIDX_DECREMENT) | (1ULL << WIDX_PREVIEW)
-            | (1ULL << WIDX_SMALL_SCENERY) | (1ULL << WIDX_LARGE_SCENERY) | (1ULL << WIDX_FOOTPATH);
-        hold_down_widgets = (1ULL << WIDX_INCREMENT) | (1ULL << WIDX_DECREMENT);
-        WindowInitScrollWidgets(this);
-        window_push_others_below(this);
+        hold_down_widgets = (1uLL << WIDX_INCREMENT) | (1uLL << WIDX_DECREMENT);
+        WindowInitScrollWidgets(*this);
+        WindowPushOthersBelow(*this);
 
         gLandToolSize = 2;
         gClearSceneryCost = MONEY64_UNDEFINED;
@@ -83,10 +81,10 @@ public:
     void OnClose() override
     {
         if (ClearSceneryToolIsActive())
-            tool_cancel();
+            ToolCancel();
     }
 
-    void OnMouseUp(const rct_widgetindex widgetIndex) override
+    void OnMouseUp(const WidgetIndex widgetIndex) override
     {
         switch (widgetIndex)
         {
@@ -116,7 +114,7 @@ public:
         }
     }
 
-    void OnMouseDown(const rct_widgetindex widgetIndex) override
+    void OnMouseDown(const WidgetIndex widgetIndex) override
     {
         switch (widgetIndex)
         {
@@ -137,18 +135,21 @@ public:
         }
     }
 
-    void OnTextInput(const rct_widgetindex widgetIndex, const std::string_view text) override
+    void OnTextInput(const WidgetIndex widgetIndex, const std::string_view text) override
     {
         if (widgetIndex != WIDX_PREVIEW || text.empty())
             return;
 
-        char* end;
-        int32_t size = strtol(std::string(text).c_str(), &end, 10);
-        if (*end == '\0')
+        try
         {
+            int32_t size = std::stol(std::string(text));
             size = std::clamp(size, MINIMUM_TOOL_SIZE, MAXIMUM_TOOL_SIZE);
             gLandToolSize = size;
             Invalidate();
+        }
+        catch (const std::logic_error&)
+        {
+            // std::stol can throw std::out_of_range or std::invalid_argument
         }
     }
 
@@ -163,14 +164,14 @@ public:
     void Invalidate()
     {
         // Set the preview image button to be pressed down
-        pressed_widgets = (1ULL << WIDX_PREVIEW) | (gClearSmallScenery ? (1ULL << WIDX_SMALL_SCENERY) : 0)
-            | (gClearLargeScenery ? (1ULL << WIDX_LARGE_SCENERY) : 0) | (gClearFootpath ? (1ULL << WIDX_FOOTPATH) : 0);
+        pressed_widgets = (1uLL << WIDX_PREVIEW) | (gClearSmallScenery ? (1uLL << WIDX_SMALL_SCENERY) : 0)
+            | (gClearLargeScenery ? (1uLL << WIDX_LARGE_SCENERY) : 0) | (gClearFootpath ? (1uLL << WIDX_FOOTPATH) : 0);
 
         // Update the preview image (for tool sizes up to 7)
-        window_clear_scenery_widgets[WIDX_PREVIEW].image = LandTool::SizeToSpriteIndex(gLandToolSize);
+        window_clear_scenery_widgets[WIDX_PREVIEW].image = ImageId(LandTool::SizeToSpriteIndex(gLandToolSize));
     }
 
-    void OnDraw(rct_drawpixelinfo& dpi) override
+    void OnDraw(DrawPixelInfo& dpi) override
     {
         DrawWidgets(dpi);
 
@@ -196,14 +197,14 @@ public:
     }
 };
 
-rct_window* WindowClearSceneryOpen()
+WindowBase* WindowClearSceneryOpen()
 {
-    auto* w = static_cast<CleanSceneryWindow*>(window_bring_to_front_by_class(WC_CLEAR_SCENERY));
+    auto* w = static_cast<CleanSceneryWindow*>(WindowBringToFrontByClass(WindowClass::ClearScenery));
 
     if (w != nullptr)
         return w;
 
-    w = WindowCreate<CleanSceneryWindow>(WC_CLEAR_SCENERY, ScreenCoordsXY(context_get_width() - WW, 29), WW, WH, 0);
+    w = WindowCreate<CleanSceneryWindow>(WindowClass::ClearScenery, ScreenCoordsXY(ContextGetWidth() - WW, 29), WW, WH, 0);
 
     if (w != nullptr)
         return w;

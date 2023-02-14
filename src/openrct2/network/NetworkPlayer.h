@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -28,7 +28,7 @@ public:
     uint16_t Ping = 0;
     uint8_t Flags = 0;
     uint8_t Group = 0;
-    money32 MoneySpent = MONEY(0, 0);
+    money32 MoneySpent = 0.00_GBP;
     uint32_t CommandsRan = 0;
     int32_t LastAction = -999;
     uint32_t LastActionTime = 0;
@@ -39,7 +39,7 @@ public:
     uint32_t LastDemolishRideTime = 0;
     uint32_t LastPlaceSceneryTime = 0;
     std::unordered_map<GameCommand, int32_t> CooldownTime;
-    NetworkPlayer() = default;
+    NetworkPlayer() noexcept = default;
 
     void SetName(std::string_view name);
 

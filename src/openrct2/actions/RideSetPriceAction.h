@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -14,13 +14,13 @@
 class RideSetPriceAction final : public GameActionBase<GameCommand::SetRidePrice>
 {
 private:
-    NetworkRideId_t _rideIndex{ RIDE_ID_NULL };
+    RideId _rideIndex{ RideId::GetNull() };
     money16 _price{ MONEY16_UNDEFINED };
     bool _primaryPrice{ true };
 
 public:
     RideSetPriceAction() = default;
-    RideSetPriceAction(ride_id_t rideIndex, money16 price, bool primaryPrice);
+    RideSetPriceAction(RideId rideIndex, money16 price, bool primaryPrice);
 
     void AcceptParameters(GameActionParameterVisitor& visitor) override;
 

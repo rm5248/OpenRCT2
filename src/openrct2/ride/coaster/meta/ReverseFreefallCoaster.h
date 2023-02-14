@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -23,7 +23,7 @@ constexpr const RideTypeDescriptor ReverseFreefallCoasterRTD =
     SET_FIELD(ExtraTrackPieces, {}),
     SET_FIELD(CoveredTrackPieces, {}),
     SET_FIELD(StartTrackPiece, TrackElemType::EndStation),
-    SET_FIELD(TrackPaintFunction, get_track_paint_function_reverse_freefall_rc),
+    SET_FIELD(TrackPaintFunction, GetTrackPaintFunctionReverseFreefallRC),
     SET_FIELD(Flags, RIDE_TYPE_FLAGS_TRACK_HAS_3_COLOURS | RIDE_TYPE_FLAGS_COMMON_COASTER | RIDE_TYPE_FLAGS_COMMON_COASTER_NON_ALT),
     SET_FIELD(RideModes, EnumsToFlags(RideMode::LimPoweredLaunch)),
     SET_FIELD(DefaultMode, RideMode::LimPoweredLaunch),
@@ -35,10 +35,10 @@ constexpr const RideTypeDescriptor ReverseFreefallCoasterRTD =
     SET_FIELD(Heights, { 255, 32, 4, 7, }),
     SET_FIELD(MaxMass, 255),
     SET_FIELD(LiftData, { OpenRCT2::Audio::SoundId::Null, 5, 5 }),
-    SET_FIELD(RatingsCalculationFunction, ride_ratings_calculate_reverse_freefall_coaster),
+    SET_FIELD(RatingsCalculationFunction, RideRatingsCalculateReverseFreefallCoaster),
     SET_FIELD(RatingsMultipliers, { 44, 66, 10 }),
     SET_FIELD(UpkeepCosts, { 80, 20, 0, 0, 0, 10 }),
-    SET_FIELD(BuildCosts, { 200, 0, 45, }),
+    SET_FIELD(BuildCosts, { 100.00_GBP, 0.00_GBP, 45, }),
     SET_FIELD(DefaultPrices, { 20, 20 }),
     SET_FIELD(DefaultMusic, MUSIC_OBJECT_ROCK_1),
     SET_FIELD(PhotoItem, ShopItem::Photo),
@@ -50,5 +50,6 @@ constexpr const RideTypeDescriptor ReverseFreefallCoasterRTD =
     )),
     SET_FIELD(ColourPreview, { SPR_RIDE_DESIGN_PREVIEW_REVERSE_FREEFALL_COASTER_TRACK, SPR_RIDE_DESIGN_PREVIEW_REVERSE_FREEFALL_COASTER_SUPPORTS }),
     SET_FIELD(ColourKey, RideColourKey::Ride),
+    SET_FIELD(Name, "reverse_freefall_rc"),
 };
 // clang-format on

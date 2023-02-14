@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -27,6 +27,7 @@
 #include "core/FileScanner.h"
 #include "core/Path.hpp"
 #include "entity/EntityRegistry.h"
+#include "entity/PatrolArea.h"
 #include "entity/Peep.h"
 #include "entity/Staff.h"
 #include "interface/Colour.h"
@@ -40,7 +41,8 @@
 #include "network/network.h"
 #include "object/Object.h"
 #include "object/ObjectList.h"
-#include "platform/Platform2.h"
+#include "object/WaterEntry.h"
+#include "platform/Platform.h"
 #include "ride/Ride.h"
 #include "ride/RideRatings.h"
 #include "ride/Station.h"
@@ -64,7 +66,6 @@
 #include "world/Park.h"
 #include "world/Scenery.h"
 #include "world/Surface.h"
-#include "world/Water.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -79,49 +80,52 @@ float gDayNightCycle = 0;
 bool gInUpdateCode = false;
 bool gInMapInitCode = false;
 std::string gCurrentLoadedPath;
+bool gIsAutosave = false;
+bool gIsAutosaveLoaded = false;
 
 bool gLoadKeepWindowsOpen = false;
 
 uint32_t gCurrentTicks;
 uint32_t gCurrentRealTimeTicks;
 
-rct_string_id gGameCommandErrorTitle;
-rct_string_id gGameCommandErrorText;
+#ifdef ENABLE_SCRIPTING
+static bool _mapChangedExpected;
+#endif
 
 using namespace OpenRCT2;
 
-void game_reset_speed()
+void GameResetSpeed()
 {
     gGameSpeed = 1;
-    window_invalidate_by_class(WC_TOP_TOOLBAR);
+    WindowInvalidateByClass(WindowClass::TopToolbar);
 }
 
-void game_increase_game_speed()
+void GameIncreaseGameSpeed()
 {
-    gGameSpeed = std::min(gConfigGeneral.debugging_tools ? 5 : 4, gGameSpeed + 1);
+    gGameSpeed = std::min(gConfigGeneral.DebuggingTools ? 5 : 4, gGameSpeed + 1);
     if (gGameSpeed == 5)
         gGameSpeed = 8;
-    window_invalidate_by_class(WC_TOP_TOOLBAR);
+    WindowInvalidateByClass(WindowClass::TopToolbar);
 }
 
-void game_reduce_game_speed()
+void GameReduceGameSpeed()
 {
     gGameSpeed = std::max(1, gGameSpeed - 1);
     if (gGameSpeed == 7)
         gGameSpeed = 4;
-    window_invalidate_by_class(WC_TOP_TOOLBAR);
+    WindowInvalidateByClass(WindowClass::TopToolbar);
 }
 
 /**
  *
  *  rct2: 0x0066B5C0 (part of 0x0066B3E8)
  */
-void game_create_windows()
+void GameCreateWindows()
 {
-    context_open_window(WC_MAIN_WINDOW);
-    context_open_window(WC_TOP_TOOLBAR);
-    context_open_window(WC_BOTTOM_TOOLBAR);
-    window_resize_gui(context_get_width(), context_get_height());
+    ContextOpenWindow(WindowClass::MainWindow);
+    ContextOpenWindow(WindowClass::TopToolbar);
+    ContextOpenWindow(WindowClass::BottomToolbar);
+    WindowResizeGui(ContextGetWidth(), ContextGetHeight());
 }
 
 enum
@@ -142,9 +146,9 @@ enum
  *
  *  rct2: 0x006838BD
  */
-void update_palette_effects()
+void UpdatePaletteEffects()
 {
-    auto water_type = static_cast<rct_water_type*>(object_entry_get_chunk(ObjectType::Water, 0));
+    auto water_type = static_cast<WaterObjectEntry*>(ObjectEntryGetChunk(ObjectType::Water, 0));
 
     if (gClimateLightningFlash == 1)
     {
@@ -155,7 +159,7 @@ void update_palette_effects()
         {
             palette = water_type->image_id;
         }
-        const rct_g1_element* g1 = gfx_get_g1_element(palette);
+        const G1Element* g1 = GfxGetG1Element(palette);
         if (g1 != nullptr)
         {
             int32_t xoffset = g1->x_offset;
@@ -183,7 +187,7 @@ void update_palette_effects()
                 palette = water_type->image_id;
             }
 
-            const rct_g1_element* g1 = gfx_get_g1_element(palette);
+            const G1Element* g1 = GfxGetG1Element(palette);
             if (g1 != nullptr)
             {
                 int32_t xoffset = g1->x_offset;
@@ -200,9 +204,9 @@ void update_palette_effects()
 
         // Animate the water/lava/chain movement palette
         uint32_t shade = 0;
-        if (gConfigGeneral.render_weather_gloom)
+        if (gConfigGeneral.RenderWeatherGloom)
         {
-            auto paletteId = climate_get_weather_gloom_palette_id(gClimateCurrent);
+            auto paletteId = ClimateGetWeatherGloomPaletteId(gClimateCurrent);
             if (paletteId != FilterPaletteID::PaletteNull)
             {
                 shade = 1;
@@ -219,7 +223,7 @@ void update_palette_effects()
         {
             waterId = water_type->palette_index_1;
         }
-        const rct_g1_element* g1 = gfx_get_g1_element(shade + waterId);
+        const G1Element* g1 = GfxGetG1Element(shade + waterId);
         if (g1 != nullptr)
         {
             uint8_t* vs = &g1->offset[j * 3];
@@ -244,7 +248,7 @@ void update_palette_effects()
         {
             waterId = water_type->palette_index_2;
         }
-        g1 = gfx_get_g1_element(shade + waterId);
+        g1 = GfxGetG1Element(shade + waterId);
         if (g1 != nullptr)
         {
             uint8_t* vs = &g1->offset[j * 3];
@@ -266,7 +270,7 @@ void update_palette_effects()
 
         j = (static_cast<uint16_t>(gPaletteEffectFrame * -960) * 3) >> 16;
         waterId = SPR_GAME_PALETTE_4;
-        g1 = gfx_get_g1_element(shade + waterId);
+        g1 = GfxGetG1Element(shade + waterId);
         if (g1 != nullptr)
         {
             uint8_t* vs = &g1->offset[j * 3];
@@ -295,22 +299,22 @@ void update_palette_effects()
     }
 }
 
-void pause_toggle()
+void PauseToggle()
 {
     gGamePaused ^= GAME_PAUSED_NORMAL;
-    window_invalidate_by_class(WC_TOP_TOOLBAR);
+    WindowInvalidateByClass(WindowClass::TopToolbar);
     if (gGamePaused & GAME_PAUSED_NORMAL)
     {
         OpenRCT2::Audio::StopAll();
     }
 }
 
-bool game_is_paused()
+bool GameIsPaused()
 {
     return gGamePaused != 0;
 }
 
-bool game_is_not_paused()
+bool GameIsNotPaused()
 {
     return gGamePaused == 0;
 }
@@ -319,25 +323,25 @@ bool game_is_not_paused()
  *
  *  rct2: 0x0066DC0F
  */
-static void load_landscape()
+static void LoadLandscape()
 {
-    auto intent = Intent(WC_LOADSAVE);
-    intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_LANDSCAPE);
-    context_open_intent(&intent);
+    auto intent = Intent(WindowClass::Loadsave);
+    intent.PutExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_LANDSCAPE);
+    ContextOpenIntent(&intent);
 }
 
-void rct2_to_utf8_self(char* buffer, size_t length)
+void RCT2StringToUTF8Self(char* buffer, size_t length)
 {
     if (length > 0)
     {
-        auto temp = rct2_to_utf8(buffer, RCT2LanguageId::EnglishUK);
-        safe_strcpy(buffer, temp.data(), length);
+        auto temp = RCT2StringToUTF8(buffer, RCT2LanguageId::EnglishUK);
+        SafeStrCpy(buffer, temp.data(), length);
     }
 }
 
 // OpenRCT2 workaround to recalculate some values which are saved redundantly in the save to fix corrupted files.
 // For example recalculate guest count by looking at all the guests instead of trusting the value in the file.
-void game_fix_save_vars()
+void GameFixSaveVars()
 {
     // Recalculates peep count after loading a save to fix corrupted files
     uint32_t guestCount = 0;
@@ -359,34 +363,34 @@ void game_fix_save_vars()
     // Fix possibly invalid field values
     for (auto peep : EntityList<Guest>())
     {
-        if (peep->CurrentRideStation >= MAX_STATIONS)
+        if (peep->CurrentRideStation.ToUnderlying() >= OpenRCT2::Limits::MaxStationsPerRide)
         {
             const auto srcStation = peep->CurrentRideStation;
             const auto rideIdx = peep->CurrentRide;
-            if (rideIdx == RIDE_ID_NULL)
+            if (rideIdx.IsNull())
             {
                 continue;
             }
-            Ride* ride = get_ride(rideIdx);
+            Ride* ride = GetRide(rideIdx);
             if (ride == nullptr)
             {
-                log_warning("Couldn't find ride %u, resetting ride on peep %u", rideIdx, peep->sprite_index);
-                peep->CurrentRide = RIDE_ID_NULL;
+                LOG_WARNING("Couldn't find ride %u, resetting ride on peep %u", rideIdx, peep->Id);
+                peep->CurrentRide = RideId::GetNull();
                 continue;
             }
             auto curName = peep->GetName();
-            log_warning(
-                "Peep %u (%s) has invalid ride station = %u for ride %u.", peep->sprite_index, curName.c_str(), srcStation,
+            LOG_WARNING(
+                "Peep %u (%s) has invalid ride station = %u for ride %u.", peep->Id, curName.c_str(), srcStation.ToUnderlying(),
                 rideIdx);
-            auto station = ride_get_first_valid_station_exit(ride);
-            if (station == STATION_INDEX_NULL)
+            auto station = RideGetFirstValidStationExit(*ride);
+            if (station.IsNull())
             {
-                log_warning("Couldn't find station, removing peep %u", peep->sprite_index);
+                LOG_WARNING("Couldn't find station, removing peep %u", peep->Id);
                 peepsToRemove.push_back(peep);
             }
             else
             {
-                log_warning("Amending ride station to %u.", station);
+                LOG_WARNING("Amending ride station to %u.", station);
                 peep->CurrentRideStation = station;
             }
         }
@@ -409,22 +413,22 @@ void game_fix_save_vars()
     {
         for (int32_t x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++)
         {
-            auto* surfaceElement = map_get_surface_element_at(TileCoordsXY{ x, y }.ToCoordsXY());
+            auto* surfaceElement = MapGetSurfaceElementAt(TileCoordsXY{ x, y }.ToCoordsXY());
 
             if (surfaceElement == nullptr)
             {
-                log_error("Null map element at x = %d and y = %d. Fixing...", x, y);
+                LOG_ERROR("Null map element at x = %d and y = %d. Fixing...", x, y);
                 surfaceElement = TileElementInsert<SurfaceElement>(TileCoordsXYZ{ x, y, 14 }.ToCoordsXYZ(), 0b0000);
                 if (surfaceElement == nullptr)
                 {
-                    log_error("Unable to fix: Map element limit reached.");
+                    LOG_ERROR("Unable to fix: Map element limit reached.");
                     return;
                 }
             }
 
             // Fix the invisible border tiles.
             // At this point, we can be sure that surfaceElement is not NULL.
-            if (x == 0 || x == gMapSize - 1 || y == 0 || y == gMapSize - 1)
+            if (x == 0 || x == gMapSize.x - 1 || y == 0 || y == gMapSize.y - 1)
             {
                 surfaceElement->SetBaseZ(MINIMUM_LAND_HEIGHT_BIG);
                 surfaceElement->SetClearanceZ(MINIMUM_LAND_HEIGHT_BIG);
@@ -436,22 +440,21 @@ void game_fix_save_vars()
 
     ResearchFix();
 
-    // Fix banner list pointing to NULL map elements
-    banner_reset_broken_index();
-
     // Fix banners which share their index
-    fix_duplicated_banners();
+    BannerApplyFixes();
 
     // Fix invalid vehicle sprite sizes, thus preventing visual corruption of sprites
-    fix_invalid_vehicle_sprite_sizes();
+    FixInvalidVehicleSpriteSizes();
 
     // Fix gParkEntrance locations for which the tile_element no longer exists
-    fix_park_entrance_locations();
+    ParkEntranceFixLocations();
 
-    staff_update_greyed_patrol_areas();
+    UpdateConsolidatedPatrolAreas();
+
+    MapCountRemainingLandRights();
 }
 
-void game_load_init()
+void GameLoadInit()
 {
     IGameStateSnapshots* snapshots = GetContext()->GetGameStateSnapshots();
     snapshots->Reset();
@@ -460,55 +463,83 @@ void game_load_init()
     OpenRCT2::Audio::StopAll();
     if (!gLoadKeepWindowsOpen)
     {
-        viewport_init_all();
-        game_create_windows();
+        ViewportInitAll();
+        GameCreateWindows();
     }
     else
     {
-        auto* mainWindow = window_get_main();
-        window_unfollow_sprite(mainWindow);
+        auto* mainWindow = WindowGetMain();
+        WindowUnfollowSprite(*mainWindow);
     }
 
     auto windowManager = GetContext()->GetUiContext()->GetWindowManager();
     windowManager->SetMainView(gSavedView, gSavedViewZoom, gSavedViewRotation);
 
-    if (network_get_mode() != NETWORK_MODE_CLIENT)
+    if (NetworkGetMode() != NETWORK_MODE_CLIENT)
     {
         GameActions::ClearQueue();
     }
     ResetEntitySpatialIndices();
-    reset_all_sprite_quadrant_placements();
-    scenery_set_default_placement_configuration();
+    ResetAllSpriteQuadrantPlacements();
+    ScenerySetDefaultPlacementConfiguration();
 
     auto intent = Intent(INTENT_ACTION_REFRESH_NEW_RIDES);
-    context_broadcast_intent(&intent);
+    ContextBroadcastIntent(&intent);
 
     gWindowUpdateTicks = 0;
 
-    load_palette();
+    LoadPalette();
 
     if (!gOpenRCT2Headless)
     {
         intent = Intent(INTENT_ACTION_CLEAR_TILE_INSPECTOR_CLIPBOARD);
-        context_broadcast_intent(&intent);
-        window_update_all();
+        ContextBroadcastIntent(&intent);
+        WindowUpdateAll();
     }
 
     OpenRCT2::Audio::StopTitleMusic();
     gGameSpeed = 1;
 }
 
-void game_load_scripts()
+void GameLoadScripts()
 {
 #ifdef ENABLE_SCRIPTING
-    GetContext()->GetScriptEngine().LoadPlugins();
+    GetContext()->GetScriptEngine().LoadTransientPlugins();
 #endif
 }
 
-void game_unload_scripts()
+void GameUnloadScripts()
 {
 #ifdef ENABLE_SCRIPTING
-    GetContext()->GetScriptEngine().UnloadPlugins();
+    GetContext()->GetScriptEngine().UnloadTransientPlugins();
+#endif
+}
+
+void GameNotifyMapChange()
+{
+#ifdef ENABLE_SCRIPTING
+    // Ensure we don't get a two lots of change events
+    if (_mapChangedExpected)
+        return;
+
+    using namespace OpenRCT2::Scripting;
+
+    auto& scriptEngine = GetContext()->GetScriptEngine();
+    auto& hookEngine = scriptEngine.GetHookEngine();
+    hookEngine.Call(HOOK_TYPE::MAP_CHANGE, false);
+    _mapChangedExpected = true;
+#endif
+}
+
+void GameNotifyMapChanged()
+{
+#ifdef ENABLE_SCRIPTING
+    using namespace OpenRCT2::Scripting;
+
+    auto& scriptEngine = GetContext()->GetScriptEngine();
+    auto& hookEngine = scriptEngine.GetHookEngine();
+    hookEngine.Call(HOOK_TYPE::MAP_CHANGED, false);
+    _mapChangedExpected = false;
 #endif
 }
 
@@ -517,11 +548,11 @@ void game_unload_scripts()
  *  rct2: 0x0069E9A7
  * Call after a rotation or loading of a save to reset sprite quadrants
  */
-void reset_all_sprite_quadrant_placements()
+void ResetAllSpriteQuadrantPlacements()
 {
-    for (size_t i = 0; i < MAX_ENTITIES; i++)
+    for (EntityId::UnderlyingType i = 0; i < MAX_ENTITIES; i++)
     {
-        auto* spr = GetEntity(i);
+        auto* spr = GetEntity(EntityId::FromUnderlying(i));
         if (spr != nullptr && spr->Type != EntityType::Null)
         {
             spr->MoveTo(spr->GetLocation());
@@ -529,76 +560,65 @@ void reset_all_sprite_quadrant_placements()
     }
 }
 
-void save_game()
+void SaveGame()
 {
-    if (!gFirstTimeSaving)
+    if (!gFirstTimeSaving && !gIsAutosaveLoaded)
     {
-        char savePath[MAX_PATH];
-        safe_strcpy(savePath, gScenarioSavePath.c_str(), MAX_PATH);
-        path_remove_extension(savePath);
-        path_append_extension(savePath, ".park", MAX_PATH);
-
-        save_game_with_name(savePath);
+        const auto savePath = Path::WithExtension(gScenarioSavePath, ".park");
+        SaveGameWithName(savePath);
     }
     else
     {
-        save_game_as();
+        SaveGameAs();
     }
 }
 
-void save_game_cmd(const utf8* name /* = nullptr */)
+void SaveGameCmd(u8string_view name /* = {} */)
 {
-    if (name == nullptr)
+    if (name.empty())
     {
-        char savePath[MAX_PATH];
-        safe_strcpy(savePath, gScenarioSavePath.c_str(), MAX_PATH);
-        path_remove_extension(savePath);
-        path_append_extension(savePath, ".park", MAX_PATH);
+        const auto savePath = Path::WithExtension(gScenarioSavePath, ".park");
 
-        save_game_with_name(savePath);
+        SaveGameWithName(savePath);
     }
     else
     {
-        char savePath[MAX_PATH];
-        platform_get_user_directory(savePath, "save", sizeof(savePath));
-        safe_strcat_path(savePath, name, sizeof(savePath));
-        path_append_extension(savePath, ".park", sizeof(savePath));
-        save_game_with_name(savePath);
+        auto env = GetContext()->GetPlatformEnvironment();
+        auto savePath = Path::Combine(env->GetDirectoryPath(DIRBASE::USER, DIRID::SAVE), u8string(name) + u8".park");
+        SaveGameWithName(savePath);
     }
 }
 
-void save_game_with_name(const utf8* name)
+void SaveGameWithName(u8string_view name)
 {
-    log_verbose("Saving to %s", name);
-    if (scenario_save(name, 0x80000000 | (gConfigGeneral.save_plugin_data ? 1 : 0)))
+    LOG_VERBOSE("Saving to %s", u8string(name).c_str());
+    if (ScenarioSave(name, gConfigGeneral.SavePluginData ? 1 : 0))
     {
-        log_verbose("Saved to %s", name);
+        LOG_VERBOSE("Saved to %s", u8string(name).c_str());
         gCurrentLoadedPath = name;
+        gIsAutosaveLoaded = false;
         gScreenAge = 0;
     }
 }
 
-void* create_save_game_as_intent()
+std::unique_ptr<Intent> CreateSaveGameAsIntent()
 {
-    char name[MAX_PATH];
-    safe_strcpy(name, path_get_filename(gScenarioSavePath.c_str()), MAX_PATH);
-    path_remove_extension(name);
+    auto name = Path::GetFileNameWithoutExtension(gScenarioSavePath);
 
-    Intent* intent = new Intent(WC_LOADSAVE);
-    intent->putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_SAVE | LOADSAVETYPE_GAME);
-    intent->putExtra(INTENT_EXTRA_PATH, std::string{ name });
+    auto intent = std::make_unique<Intent>(WindowClass::Loadsave);
+    intent->PutExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_SAVE | LOADSAVETYPE_GAME);
+    intent->PutExtra(INTENT_EXTRA_PATH, name);
 
     return intent;
 }
 
-void save_game_as()
+void SaveGameAs()
 {
-    auto* intent = static_cast<Intent*>(create_save_game_as_intent());
-    context_open_intent(intent);
-    delete intent;
+    auto intent = CreateSaveGameAsIntent();
+    ContextOpenIntent(intent.get());
 }
 
-static void limit_autosave_count(const size_t numberOfFilesToKeep, bool processLandscapeFolder)
+static void LimitAutosaveCount(const size_t numberOfFilesToKeep, bool processLandscapeFolder)
 {
     size_t autosavesCount = 0;
     size_t numAutosavesToDelete = 0;
@@ -609,13 +629,10 @@ static void limit_autosave_count(const size_t numberOfFilesToKeep, bool processL
     if (processLandscapeFolder)
     {
         folderDirectory = environment->GetDirectoryPath(DIRBASE::USER, DIRID::LANDSCAPE);
-        fileFilter = "autosave_*.sc6";
+        fileFilter = "autosave_*.park";
     }
 
-    utf8 filter[MAX_PATH];
-    safe_strcpy(filter, folderDirectory.c_str(), sizeof(filter));
-    safe_strcat_path(filter, "autosave", sizeof(filter));
-    safe_strcat_path(filter, fileFilter, sizeof(filter));
+    const u8string filter = Path::Combine(folderDirectory, "autosave", fileFilter);
 
     // At first, count how many autosaves there are
     {
@@ -632,17 +649,14 @@ static void limit_autosave_count(const size_t numberOfFilesToKeep, bool processL
         return;
     }
 
-    auto autosaveFiles = std::vector<std::string>(autosavesCount);
+    std::vector<u8string> autosaveFiles;
     {
         auto scanner = Path::ScanDirectory(filter, false);
         for (size_t i = 0; i < autosavesCount; i++)
         {
-            autosaveFiles[i].resize(MAX_PATH, 0);
             if (scanner->Next())
             {
-                safe_strcpy(autosaveFiles[i].data(), folderDirectory.c_str(), sizeof(utf8) * MAX_PATH);
-                safe_strcat_path(autosaveFiles[i].data(), "autosave", sizeof(utf8) * MAX_PATH);
-                safe_strcat_path(autosaveFiles[i].data(), scanner->GetPathRelative(), sizeof(utf8) * MAX_PATH);
+                autosaveFiles.emplace_back(Path::Combine(folderDirectory, "autosave", scanner->GetPathRelative()));
             }
         }
     }
@@ -652,26 +666,26 @@ static void limit_autosave_count(const size_t numberOfFilesToKeep, bool processL
     });
 
     // Calculate how many saves we need to delete.
-    numAutosavesToDelete = autosavesCount - numberOfFilesToKeep;
+    numAutosavesToDelete = autosaveFiles.size() - numberOfFilesToKeep;
 
     for (size_t i = 0; numAutosavesToDelete > 0; i++, numAutosavesToDelete--)
     {
-        if (!File::Delete(autosaveFiles[i].data()))
+        if (!File::Delete(autosaveFiles[i]))
         {
-            log_warning("Failed to delete autosave file: %s", autosaveFiles[i].data());
+            LOG_WARNING("Failed to delete autosave file: %s", autosaveFiles[i].data());
         }
     }
 }
 
-void game_autosave()
+void GameAutosave()
 {
-    const char* subDirectory = "save";
+    auto subDirectory = DIRID::SAVE;
     const char* fileExtension = ".park";
     uint32_t saveFlags = 0x80000000;
     if (gScreenFlags & SCREEN_FLAGS_EDITOR)
     {
-        subDirectory = "landscape";
-        fileExtension = ".sc6";
+        subDirectory = DIRID::LANDSCAPE;
+        fileExtension = ".park";
         saveFlags |= 2;
     }
 
@@ -684,45 +698,55 @@ void game_autosave()
         timeName, sizeof(timeName), "autosave_%04u-%02u-%02u_%02u-%02u-%02u%s", currentDate.year, currentDate.month,
         currentDate.day, currentTime.hour, currentTime.minute, currentTime.second, fileExtension);
 
-    int32_t autosavesToKeep = gConfigGeneral.autosave_amount;
-    limit_autosave_count(autosavesToKeep - 1, (gScreenFlags & SCREEN_FLAGS_EDITOR));
+    int32_t autosavesToKeep = gConfigGeneral.AutosaveAmount;
+    LimitAutosaveCount(autosavesToKeep - 1, (gScreenFlags & SCREEN_FLAGS_EDITOR));
 
-    utf8 path[MAX_PATH];
-    utf8 backupPath[MAX_PATH];
-    platform_get_user_directory(path, subDirectory, sizeof(path));
-    safe_strcat_path(path, "autosave", sizeof(path));
-    platform_ensure_directory_exists(path);
-    safe_strcpy(backupPath, path, sizeof(backupPath));
-    safe_strcat_path(path, timeName, sizeof(path));
-    safe_strcat_path(backupPath, "autosave", sizeof(backupPath));
-    safe_strcat(backupPath, fileExtension, sizeof(backupPath));
-    safe_strcat(backupPath, ".bak", sizeof(backupPath));
+    auto env = GetContext()->GetPlatformEnvironment();
+    auto autosaveDir = Path::Combine(env->GetDirectoryPath(DIRBASE::USER, subDirectory), u8"autosave");
+    Platform::EnsureDirectoryExists(autosaveDir.c_str());
+
+    auto path = Path::Combine(autosaveDir, timeName);
+    auto backupFileName = u8string(u8"autosave") + fileExtension + u8".bak";
+    auto backupPath = Path::Combine(autosaveDir, backupFileName);
 
     if (File::Exists(path))
     {
         File::Copy(path, backupPath, true);
     }
 
-    if (!scenario_save(path, saveFlags))
+    if (!ScenarioSave(path, saveFlags))
         Console::Error::WriteLine("Could not autosave the scenario. Is the save folder writeable?");
 }
 
-static void game_load_or_quit_no_save_prompt_callback(int32_t result, const utf8* path)
+static void GameLoadOrQuitNoSavePromptCallback(int32_t result, const utf8* path)
 {
     if (result == MODAL_RESULT_OK)
     {
-        game_unload_scripts();
-        window_close_by_class(WC_EDITOR_OBJECT_SELECTION);
-        context_load_park_from_file(path);
-        game_load_scripts();
+        GameNotifyMapChange();
+        GameUnloadScripts();
+        WindowCloseByClass(WindowClass::EditorObjectSelection);
+        GetContext()->LoadParkFromFile(path);
+        GameLoadScripts();
+        GameNotifyMapChanged();
+        gIsAutosaveLoaded = gIsAutosave;
+        gFirstTimeSaving = false;
     }
+}
+
+static void NewGameWindowCallback(const utf8* path)
+{
+    WindowCloseByClass(WindowClass::EditorObjectSelection);
+    GameNotifyMapChange();
+    GetContext()->LoadParkFromFile(path, false, true);
+    GameLoadScripts();
+    GameNotifyMapChanged();
 }
 
 /**
  *
  *  rct2: 0x0066DB79
  */
-void game_load_or_quit_no_save_prompt()
+void GameLoadOrQuitNoSavePrompt()
 {
     switch (gSavePromptMode)
     {
@@ -730,17 +754,17 @@ void game_load_or_quit_no_save_prompt()
         {
             auto loadOrQuitAction = LoadOrQuitAction(LoadOrQuitModes::CloseSavePrompt);
             GameActions::Execute(&loadOrQuitAction);
-            tool_cancel();
+            ToolCancel();
             if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
             {
-                load_landscape();
+                LoadLandscape();
             }
             else
             {
-                auto intent = Intent(WC_LOADSAVE);
-                intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_GAME);
-                intent.putExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(game_load_or_quit_no_save_prompt_callback));
-                context_open_intent(&intent);
+                auto intent = Intent(WindowClass::Loadsave);
+                intent.PutExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_GAME);
+                intent.PutExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(GameLoadOrQuitNoSavePromptCallback));
+                ContextOpenIntent(&intent);
             }
             break;
         }
@@ -748,41 +772,52 @@ void game_load_or_quit_no_save_prompt()
         {
             auto loadOrQuitAction = LoadOrQuitAction(LoadOrQuitModes::CloseSavePrompt);
             GameActions::Execute(&loadOrQuitAction);
-            tool_cancel();
-            if (input_test_flag(INPUT_FLAG_5))
+            ToolCancel();
+            if (InputTestFlag(INPUT_FLAG_5))
             {
-                input_set_flag(INPUT_FLAG_5, false);
+                InputSetFlag(INPUT_FLAG_5, false);
             }
             gGameSpeed = 1;
             gFirstTimeSaving = true;
-            game_unload_scripts();
-            title_load();
+            GameNotifyMapChange();
+            GameUnloadScripts();
+            TitleLoad();
+            break;
+        }
+        case PromptMode::SaveBeforeNewGame:
+        {
+            auto loadOrQuitAction = LoadOrQuitAction(LoadOrQuitModes::CloseSavePrompt);
+            GameActions::Execute(&loadOrQuitAction);
+            ToolCancel();
+            auto intent = Intent(WindowClass::ScenarioSelect);
+            intent.PutExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(NewGameWindowCallback));
+            ContextOpenIntent(&intent);
             break;
         }
         default:
-            game_unload_scripts();
-            openrct2_finish();
+            GameUnloadScripts();
+            OpenRCT2Finish();
             break;
     }
 }
 
-void start_silent_record()
+void StartSilentRecord()
 {
     std::string name = Path::Combine(
-        OpenRCT2::GetContext()->GetPlatformEnvironment()->GetDirectoryPath(OpenRCT2::DIRBASE::USER), "debug_replay.parkrep");
+        OpenRCT2::GetContext()->GetPlatformEnvironment()->GetDirectoryPath(OpenRCT2::DIRBASE::USER), u8"debug_replay.parkrep");
     auto* replayManager = OpenRCT2::GetContext()->GetReplayManager();
     if (replayManager->StartRecording(name, OpenRCT2::k_MaxReplayTicks, OpenRCT2::IReplayManager::RecordType::SILENT))
     {
         OpenRCT2::ReplayRecordInfo info;
         replayManager->GetCurrentReplayInfo(info);
-        safe_strcpy(gSilentRecordingName, info.FilePath.c_str(), MAX_PATH);
+        gSilentRecordingName = info.FilePath;
 
         const char* logFmt = "Silent replay recording started: (%s) %s\n";
         Console::WriteLine(logFmt, info.Name.c_str(), info.FilePath.c_str());
     }
 }
 
-bool stop_silent_record()
+bool StopSilentRecord()
 {
     auto* replayManager = OpenRCT2::GetContext()->GetReplayManager();
     if (!replayManager->IsRecording() && !replayManager->IsNormalising())
@@ -806,4 +841,18 @@ bool stop_silent_record()
     }
 
     return false;
+}
+
+void PrepareMapForSave()
+{
+    ViewportSetSavedView();
+
+#ifdef ENABLE_SCRIPTING
+    auto& scriptEngine = GetContext()->GetScriptEngine();
+    auto& hookEngine = scriptEngine.GetHookEngine();
+    if (hookEngine.HasSubscriptions(OpenRCT2::Scripting::HOOK_TYPE::MAP_SAVE))
+    {
+        hookEngine.Call(OpenRCT2::Scripting::HOOK_TYPE::MAP_SAVE, false);
+    }
+#endif
 }

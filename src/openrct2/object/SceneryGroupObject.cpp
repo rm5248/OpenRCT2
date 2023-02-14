@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -20,6 +20,8 @@
 #include "../drawing/Image.h"
 #include "../entity/Staff.h"
 #include "../localisation/Language.h"
+#include "../world/Scenery.h"
+#include "ObjectLimits.h"
 #include "ObjectManager.h"
 #include "ObjectRepository.h"
 
@@ -27,14 +29,24 @@
 
 using namespace OpenRCT2;
 
+// Example entry: "$DAT:09F55406|00STBEN "
+// 5 for $DAT:, 8 for the checksum, 1 for the vertical bar, 8 for the .DAT name.
+static constexpr uint8_t DatEntryPrefixLength = 5;
+static constexpr uint8_t DatEntryFlagsLength = 8;
+static constexpr uint8_t DatEntrySeparatorLength = 1;
+static constexpr uint8_t DatEntryLength = DatEntryPrefixLength + DatEntryFlagsLength + DatEntrySeparatorLength
+    + DAT_NAME_LENGTH;
+static constexpr uint8_t DatEntryFlagsStart = DatEntryPrefixLength;
+static constexpr uint8_t DatEntryNameStart = DatEntryPrefixLength + DatEntryFlagsLength + DatEntrySeparatorLength;
+
 void SceneryGroupObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
 {
     stream->Seek(6, STREAM_SEEK_CURRENT);
     stream->Seek(0x80 * 2, STREAM_SEEK_CURRENT);
-    _legacyType.entry_count = stream->ReadValue<uint8_t>();
-    stream->Seek(1, STREAM_SEEK_CURRENT); // pad_107;
+    stream->Seek(1, STREAM_SEEK_CURRENT); // entry_count
+    stream->Seek(1, STREAM_SEEK_CURRENT); // Pad107;
     _legacyType.priority = stream->ReadValue<uint8_t>();
-    stream->Seek(1, STREAM_SEEK_CURRENT); // pad_109;
+    stream->Seek(1, STREAM_SEEK_CURRENT); // Pad109;
     _legacyType.entertainer_costumes = stream->ReadValue<uint32_t>();
 
     GetStringTable().Read(context, stream, ObjectStringID::NAME);
@@ -45,26 +57,26 @@ void SceneryGroupObject::ReadLegacy(IReadObjectContext* context, IStream* stream
 void SceneryGroupObject::Load()
 {
     GetStringTable().Sort();
-    _legacyType.name = language_allocate_object_string(GetName());
-    _legacyType.image = gfx_object_allocate_images(GetImageTable().GetImages(), GetImageTable().GetCount());
-    _legacyType.entry_count = 0;
+    _legacyType.name = LanguageAllocateObjectString(GetName());
+    _legacyType.image = GfxObjectAllocateImages(GetImageTable().GetImages(), GetImageTable().GetCount());
+    _legacyType.SceneryEntries.clear();
 }
 
 void SceneryGroupObject::Unload()
 {
-    language_free_object_string(_legacyType.name);
-    gfx_object_free_images(_legacyType.image, GetImageTable().GetCount());
+    LanguageFreeObjectString(_legacyType.name);
+    GfxObjectFreeImages(_legacyType.image, GetImageTable().GetCount());
 
     _legacyType.name = 0;
     _legacyType.image = 0;
 }
 
-void SceneryGroupObject::DrawPreview(rct_drawpixelinfo* dpi, int32_t width, int32_t height) const
+void SceneryGroupObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
 {
     auto screenCoords = ScreenCoordsXY{ width / 2, height / 2 };
 
     const auto imageId = ImageId(_legacyType.image + 1, COLOUR_DARK_GREEN);
-    gfx_draw_sprite(dpi, imageId, screenCoords - ScreenCoordsXY{ 15, 14 });
+    GfxDrawSprite(dpi, imageId, screenCoords - ScreenCoordsXY{ 15, 14 });
 }
 
 static std::optional<uint8_t> GetSceneryType(const ObjectType type)
@@ -92,7 +104,7 @@ void SceneryGroupObject::UpdateEntryIndexes()
     auto& objectRepository = context->GetObjectRepository();
     auto& objectManager = context->GetObjectManager();
 
-    _legacyType.entry_count = 0;
+    _legacyType.SceneryEntries.clear();
     for (const auto& objectEntry : _items)
     {
         auto ori = objectRepository.FindObject(objectEntry);
@@ -102,13 +114,17 @@ void SceneryGroupObject::UpdateEntryIndexes()
             continue;
 
         auto entryIndex = objectManager.GetLoadedObjectEntryIndex(ori->LoadedObject.get());
-        Guard::Assert(entryIndex != OBJECT_ENTRY_INDEX_NULL, GUARD_LINE);
+        if (entryIndex == OBJECT_ENTRY_INDEX_NULL)
+        {
+            // Some parks have manually deleted objects from the save so they might not be loaded
+            // silently remove the object from the SceneryGroupObject
+            continue;
+        }
 
         auto sceneryType = GetSceneryType(ori->Type);
         if (sceneryType.has_value())
         {
-            _legacyType.scenery_entries[_legacyType.entry_count] = { sceneryType.value(), entryIndex };
-            _legacyType.entry_count++;
+            _legacyType.SceneryEntries.push_back({ sceneryType.value(), entryIndex });
         }
     }
 }
@@ -124,7 +140,7 @@ std::vector<ObjectEntryDescriptor> SceneryGroupObject::ReadItems(IStream* stream
     while (stream->ReadValue<uint8_t>() != 0xFF)
     {
         stream->Seek(-1, STREAM_SEEK_CURRENT);
-        auto entry = stream->ReadValue<rct_object_entry>();
+        auto entry = stream->ReadValue<RCTObjectEntry>();
         items.emplace_back(entry);
     }
     return items;
@@ -138,10 +154,10 @@ void SceneryGroupObject::ReadJson(IReadObjectContext* context, json_t& root)
 
     if (properties.is_object())
     {
-        _legacyType.priority = Json::GetNumber<uint8_t>(properties["priority"]);
+        _legacyType.priority = Json::GetNumber<uint8_t>(properties["priority"], 40);
         _legacyType.entertainer_costumes = ReadJsonEntertainerCostumes(properties["entertainerCostumes"]);
 
-        _items = ReadJsonEntries(properties["entries"]);
+        _items = ReadJsonEntries(context, properties["entries"]);
     }
 
     PopulateTablesFromJson(context, root);
@@ -186,13 +202,40 @@ EntertainerCostume SceneryGroupObject::ParseEntertainerCostume(const std::string
     return EntertainerCostume::Panda;
 }
 
-std::vector<ObjectEntryDescriptor> SceneryGroupObject::ReadJsonEntries(json_t& jEntries)
+std::vector<ObjectEntryDescriptor> SceneryGroupObject::ReadJsonEntries(IReadObjectContext* context, json_t& jEntries)
 {
     std::vector<ObjectEntryDescriptor> entries;
 
     for (const auto& jEntry : jEntries)
     {
-        entries.emplace_back(Json::GetString(jEntry));
+        auto entryName = Json::GetString(jEntry);
+        if (String::StartsWith(entryName, "$DAT:"))
+        {
+            if (entryName.length() != DatEntryLength)
+            {
+                std::string errorMessage = "Malformed DAT entry in scenery group: " + entryName;
+                context->LogError(ObjectError::InvalidProperty, errorMessage.c_str());
+                continue;
+            }
+
+            try
+            {
+                RCTObjectEntry entry = {};
+                entry.flags = std::stoul(entryName.substr(DatEntryFlagsStart, DatEntryFlagsLength), nullptr, 16);
+                std::memcpy(entry.name, entryName.c_str() + DatEntryNameStart, DAT_NAME_LENGTH);
+                entry.checksum = 0;
+                entries.emplace_back(entry);
+            }
+            catch (std::invalid_argument&)
+            {
+                std::string errorMessage = "Malformed flags in DAT entry in scenery group: " + entryName;
+                context->LogError(ObjectError::InvalidProperty, errorMessage.c_str());
+            }
+        }
+        else
+        {
+            entries.emplace_back(entryName);
+        }
     }
     return entries;
 }

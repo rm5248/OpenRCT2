@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -220,6 +220,11 @@ private:
             : _zip(zip)
             , _index(index)
         {
+            zip_stat_t zipFileStat{};
+            if (zip_stat_index(_zip, _index, 0, &zipFileStat) == ZIP_ER_OK)
+            {
+                _len = zipFileStat.size;
+            }
         }
 
         ~ZipItemStream() override

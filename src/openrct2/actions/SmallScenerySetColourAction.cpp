@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -21,18 +21,29 @@
 #include "../ride/TrackDesign.h"
 #include "../world/MapAnimation.h"
 #include "../world/Park.h"
-#include "../world/SmallScenery.h"
 #include "../world/Surface.h"
 #include "../world/TileElement.h"
 
 SmallScenerySetColourAction::SmallScenerySetColourAction(
-    const CoordsXYZ& loc, uint8_t quadrant, ObjectEntryIndex sceneryType, uint8_t primaryColour, uint8_t secondaryColour)
+    const CoordsXYZ& loc, uint8_t quadrant, ObjectEntryIndex sceneryType, uint8_t primaryColour, uint8_t secondaryColour,
+    uint8_t tertiaryColour)
     : _loc(loc)
     , _quadrant(quadrant)
     , _sceneryType(sceneryType)
     , _primaryColour(primaryColour)
     , _secondaryColour(secondaryColour)
+    , _tertiaryColour(tertiaryColour)
 {
+}
+
+void SmallScenerySetColourAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit(_loc);
+    visitor.Visit("quadrant", _quadrant);
+    visitor.Visit("sceneryType", _sceneryType);
+    visitor.Visit("primaryColour", _primaryColour);
+    visitor.Visit("secondaryColour", _secondaryColour);
+    visitor.Visit("tertiaryColour", _tertiaryColour);
 }
 
 uint16_t SmallScenerySetColourAction::GetActionFlags() const
@@ -73,17 +84,17 @@ GameActions::Result SmallScenerySetColourAction::QueryExecute(bool isExecuting) 
 
     if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
     {
-        if (!map_is_location_owned(_loc))
+        if (!MapIsLocationOwned(_loc))
         {
             return GameActions::Result(GameActions::Status::NotOwned, STR_CANT_REPAINT_THIS, STR_LAND_NOT_OWNED_BY_PARK);
         }
     }
 
-    auto sceneryElement = map_get_small_scenery_element_at(_loc, _sceneryType, _quadrant);
+    auto sceneryElement = MapGetSmallSceneryElementAt(_loc, _sceneryType, _quadrant);
 
     if (sceneryElement == nullptr)
     {
-        log_error("Small scenery not found at: x = %d, y = %d, z = %d", _loc.x, _loc.y, _loc.z);
+        LOG_ERROR("Small scenery not found at: x = %d, y = %d, z = %d", _loc.x, _loc.y, _loc.z);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_REPAINT_THIS, STR_NONE);
     }
 
@@ -96,8 +107,9 @@ GameActions::Result SmallScenerySetColourAction::QueryExecute(bool isExecuting) 
     {
         sceneryElement->SetPrimaryColour(_primaryColour);
         sceneryElement->SetSecondaryColour(_secondaryColour);
+        sceneryElement->SetTertiaryColour(_tertiaryColour);
 
-        map_invalidate_tile_full(_loc);
+        MapInvalidateTileFull(_loc);
     }
 
     return res;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -48,7 +48,7 @@ GameActions::Result SignSetNameAction::Query() const
     auto banner = GetBanner(_bannerIndex);
     if (banner == nullptr)
     {
-        log_warning("Invalid game command for setting sign name, banner id = %d", _bannerIndex);
+        LOG_WARNING("Invalid game command for setting sign name, banner id = %d", _bannerIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_RENAME_SIGN, STR_NONE);
     }
     return GameActions::Result();
@@ -59,24 +59,24 @@ GameActions::Result SignSetNameAction::Execute() const
     auto banner = GetBanner(_bannerIndex);
     if (banner == nullptr)
     {
-        log_warning("Invalid game command for setting sign name, banner id = %d", _bannerIndex);
+        LOG_WARNING("Invalid game command for setting sign name, banner id = %d", _bannerIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_RENAME_SIGN, STR_NONE);
     }
 
     if (!_name.empty())
     {
         banner->flags &= ~BANNER_FLAG_LINKED_TO_RIDE;
-        banner->ride_index = RIDE_ID_NULL;
+        banner->ride_index = RideId::GetNull();
         banner->text = _name;
     }
     else
     {
         // If empty name take closest ride name.
-        ride_id_t rideIndex = banner_get_closest_ride_index({ banner->position.ToCoordsXY(), 16 });
-        if (rideIndex == RIDE_ID_NULL)
+        RideId rideIndex = BannerGetClosestRideIndex({ banner->position.ToCoordsXY(), 16 });
+        if (rideIndex.IsNull())
         {
             banner->flags &= ~BANNER_FLAG_LINKED_TO_RIDE;
-            banner->ride_index = RIDE_ID_NULL;
+            banner->ride_index = RideId::GetNull();
             banner->text = {};
         }
         else
@@ -87,7 +87,7 @@ GameActions::Result SignSetNameAction::Execute() const
         }
     }
 
-    scrolling_text_invalidate();
-    gfx_invalidate_screen();
+    ScrollingTextInvalidate();
+    GfxInvalidateScreen();
     return GameActions::Result();
 }

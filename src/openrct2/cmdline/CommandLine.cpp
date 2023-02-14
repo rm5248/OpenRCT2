@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -12,7 +12,7 @@
 #include "../OpenRCT2.h"
 #include "../core/Console.hpp"
 #include "../core/String.hpp"
-#include "../platform/Platform2.h"
+#include "../platform/Platform.h"
 
 #include <algorithm>
 #include <cstring>
@@ -486,7 +486,7 @@ namespace CommandLine
                 *(static_cast<float*>(option->OutAddress)) = static_cast<float>(atof(valueString));
                 return true;
             case CMDLINE_TYPE_STRING:
-                *(static_cast<utf8**>(option->OutAddress)) = String::Duplicate(valueString);
+                *(static_cast<u8string*>(option->OutAddress)) = u8string(valueString);
                 return true;
             default:
                 Console::Error::WriteLine("Unknown CMDLINE_TYPE for: %s", option->LongName);
@@ -524,7 +524,7 @@ namespace CommandLine
     }
 } // namespace CommandLine
 
-int32_t cmdline_run(const char** argv, int32_t argc)
+int32_t CmdlineRun(const char** argv, int32_t argc)
 {
     auto argEnumerator = CommandLineArgEnumerator(argv, argc);
 

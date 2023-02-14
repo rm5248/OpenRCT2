@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,16 +9,18 @@
 
 #include "Ui.h"
 
+#include "SDLException.h"
 #include "UiContext.h"
 #include "audio/AudioContext.h"
 #include "drawing/BitmapReader.h"
 
+#include <memory>
 #include <openrct2/Context.h>
 #include <openrct2/OpenRCT2.h>
 #include <openrct2/PlatformEnvironment.h>
 #include <openrct2/audio/AudioContext.h>
 #include <openrct2/cmdline/CommandLine.hpp>
-#include <openrct2/platform/platform.h>
+#include <openrct2/platform/Platform.h>
 #include <openrct2/ui/UiContext.h>
 
 using namespace OpenRCT2;
@@ -41,8 +43,8 @@ int main(int argc, const char** argv)
 {
     std::unique_ptr<IContext> context;
     int32_t rc = EXIT_SUCCESS;
-    int runGame = cmdline_run(argv, argc);
-    core_init();
+    int runGame = CmdlineRun(argv, argc);
+    Platform::CoreInit();
     RegisterBitmapReader();
     if (runGame == EXITCODE_CONTINUE)
     {
@@ -55,7 +57,16 @@ int main(int argc, const char** argv)
         {
             // Run OpenRCT2 with a UI context
             auto env = ToShared(CreatePlatformEnvironment());
-            auto audioContext = ToShared(CreateAudioContext());
+            std::shared_ptr<IAudioContext> audioContext;
+            try
+            {
+                audioContext = ToShared(CreateAudioContext());
+            }
+            catch (const SDLException& e)
+            {
+                LOG_WARNING("Failed to create audio context. Using dummy audio context. Error message was: %s", e.what());
+                audioContext = ToShared(CreateDummyAudioContext());
+            }
             auto uiContext = ToShared(CreateUiContext(env));
             context = CreateContext(env, audioContext, uiContext);
         }

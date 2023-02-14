@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -15,34 +15,34 @@
 
 #    include <memory>
 
-NetworkPacket::NetworkPacket(NetworkCommand id)
+NetworkPacket::NetworkPacket(NetworkCommand id) noexcept
     : Header{ 0, id }
 {
 }
 
-uint8_t* NetworkPacket::GetData()
+uint8_t* NetworkPacket::GetData() noexcept
 {
     return Data.data();
 }
 
-const uint8_t* NetworkPacket::GetData() const
+const uint8_t* NetworkPacket::GetData() const noexcept
 {
     return Data.data();
 }
 
-NetworkCommand NetworkPacket::GetCommand() const
+NetworkCommand NetworkPacket::GetCommand() const noexcept
 {
     return Header.Id;
 }
 
-void NetworkPacket::Clear()
+void NetworkPacket::Clear() noexcept
 {
     BytesTransferred = 0;
     BytesRead = 0;
     Data.clear();
 }
 
-bool NetworkPacket::CommandRequiresAuth()
+bool NetworkPacket::CommandRequiresAuth() const noexcept
 {
     switch (GetCommand())
     {

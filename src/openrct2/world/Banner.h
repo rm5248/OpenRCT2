@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -32,7 +32,7 @@ struct Banner
     uint8_t flags{};
     std::string text;
     uint8_t colour{};
-    ride_id_t ride_index{};
+    RideId ride_index{};
     uint8_t text_colour{};
     TileCoordsXY position;
 
@@ -54,14 +54,13 @@ enum BANNER_FLAGS
     BANNER_FLAG_IS_WALL = (1 << 3)
 };
 
-void banner_init();
-TileElement* banner_get_tile_element(BannerIndex bannerIndex);
-WallElement* banner_get_scrolling_wall_tile_element(BannerIndex bannerIndex);
-ride_id_t banner_get_closest_ride_index(const CoordsXYZ& mapPos);
-void banner_reset_broken_index();
-void fix_duplicated_banners();
+void BannerInit();
+TileElement* BannerGetTileElement(BannerIndex bannerIndex);
+WallElement* BannerGetScrollingWallTileElement(BannerIndex bannerIndex);
+RideId BannerGetClosestRideIndex(const CoordsXYZ& mapPos);
+void BannerApplyFixes();
 void UnlinkAllRideBanners();
-void UnlinkAllBannersForRide(ride_id_t rideId);
+void UnlinkAllBannersForRide(RideId rideId);
 Banner* GetBanner(BannerIndex id);
 Banner* GetOrCreateBanner(BannerIndex id);
 Banner* CreateBanner();

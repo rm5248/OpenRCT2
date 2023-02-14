@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -10,9 +10,12 @@
 #pragma once
 
 #include "common.h"
+#include "core/String.hpp"
 
+#include <memory>
 #include <string>
 
+class Intent;
 struct ParkLoadResult;
 
 enum class GameCommand : int32_t
@@ -35,7 +38,7 @@ enum class GameCommand : int32_t
     PlaceScenery,             // GA
     SetWaterHeight,           // GA
     PlacePath,                // GA
-    PlacePathFromTrack,       // GA
+    PlacePathLayout,          // GA
     RemovePath,               // GA
     ChangeSurfaceStyle,       // GA
     SetRidePrice,             // GA
@@ -99,6 +102,7 @@ enum class GameCommand : int32_t
     SetDate,                  // GA
     Custom,                   // GA
     ChangeMapSize,
+    FreezeRideRating,
     Count,
 };
 
@@ -111,7 +115,7 @@ enum : uint32_t
     GAME_COMMAND_FLAG_4 = (1 << 4),                   // Unused
     GAME_COMMAND_FLAG_NO_SPEND = (1 << 5),            // Game command is not networked
     GAME_COMMAND_FLAG_GHOST = (1 << 6),               // Game command is not networked
-    GAME_COMMAND_FLAG_PATH_SCENERY = (1 << 7),
+    GAME_COMMAND_FLAG_TRACK_DESIGN = (1 << 7),
     GAME_COMMAND_FLAG_NETWORKED = (1u << 31) // Game command is coming from network
 };
 
@@ -129,9 +133,6 @@ enum
     ERROR_TYPE_FILE_LOAD = 255
 };
 
-extern rct_string_id gGameCommandErrorTitle;
-extern rct_string_id gGameCommandErrorText;
-
 extern uint32_t gCurrentTicks;
 extern uint32_t gCurrentRealTimeTicks;
 
@@ -143,32 +144,36 @@ extern float gDayNightCycle;
 extern bool gInUpdateCode;
 extern bool gInMapInitCode;
 extern std::string gCurrentLoadedPath;
+extern bool gIsAutosave;
+extern bool gIsAutosaveLoaded;
 
 extern bool gLoadKeepWindowsOpen;
 
-void game_reset_speed();
-void game_increase_game_speed();
-void game_reduce_game_speed();
+void GameResetSpeed();
+void GameIncreaseGameSpeed();
+void GameReduceGameSpeed();
 
-void game_create_windows();
-void reset_all_sprite_quadrant_placements();
-void update_palette_effects();
+void GameCreateWindows();
+void ResetAllSpriteQuadrantPlacements();
+void UpdatePaletteEffects();
 
-void game_load_or_quit_no_save_prompt();
-void load_from_sv6(const char* path);
-void game_load_init();
-void game_load_scripts();
-void game_unload_scripts();
-void pause_toggle();
-bool game_is_paused();
-bool game_is_not_paused();
-void save_game();
-void* create_save_game_as_intent();
-void save_game_as();
-void save_game_cmd(const utf8* name = nullptr);
-void save_game_with_name(const utf8* name);
-void game_autosave();
-void rct2_to_utf8_self(char* buffer, size_t length);
-void game_fix_save_vars();
-void start_silent_record();
-bool stop_silent_record();
+void GameLoadOrQuitNoSavePrompt();
+void GameLoadInit();
+void GameLoadScripts();
+void GameUnloadScripts();
+void GameNotifyMapChange();
+void GameNotifyMapChanged();
+void PauseToggle();
+bool GameIsPaused();
+bool GameIsNotPaused();
+void SaveGame();
+std::unique_ptr<Intent> CreateSaveGameAsIntent();
+void SaveGameAs();
+void SaveGameCmd(u8string_view name = {});
+void SaveGameWithName(u8string_view name);
+void GameAutosave();
+void RCT2StringToUTF8Self(char* buffer, size_t length);
+void GameFixSaveVars();
+void StartSilentRecord();
+bool StopSilentRecord();
+void PrepareMapForSave();

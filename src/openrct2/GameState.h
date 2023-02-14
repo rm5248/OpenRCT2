@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Date.h"
+#include "world/Location.hpp"
 
 #include <array>
 #include <chrono>
@@ -82,7 +83,7 @@ namespace OpenRCT2
             return *_park;
         }
 
-        void InitAll(int32_t mapSize);
+        void InitAll(const TileCoordsXY& mapSize);
         void Tick();
         void UpdateLogic(LogicTimings* timings = nullptr);
 

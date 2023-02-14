@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -12,13 +12,15 @@
 #include "../core/Guard.hpp"
 #include "../interface/Window.h"
 #include "../localisation/Localisation.h"
+#include "../object/LargeSceneryEntry.h"
+#include "../object/WallSceneryEntry.h"
 #include "../ride/Track.h"
 #include "Banner.h"
 #include "LargeScenery.h"
 #include "Location.hpp"
 #include "Scenery.h"
 
-bool tile_element_is_underground(TileElement* tileElement)
+bool TileElementIsUnderground(TileElement* tileElement)
 {
     do
     {
@@ -70,7 +72,7 @@ void TileElement::SetBannerIndex(BannerIndex bannerIndex)
             AsBanner()->SetIndex(bannerIndex);
             break;
         default:
-            log_error("Tried to set banner index on unsuitable tile element!");
+            LOG_ERROR("Tried to set banner index on unsuitable tile element!");
             Guard::Assert(false);
     }
 }
@@ -81,12 +83,12 @@ void TileElement::RemoveBannerEntry()
     auto banner = GetBanner(bannerIndex);
     if (banner != nullptr)
     {
-        window_close_by_number(WC_BANNER, bannerIndex.ToUnderlying());
+        WindowCloseByNumber(WindowClass::Banner, bannerIndex.ToUnderlying());
         DeleteBanner(banner->id);
     }
 }
 
-ride_id_t TileElement::GetRideIndex() const
+RideId TileElement::GetRideIndex() const
 {
     switch (GetType())
     {
@@ -97,20 +99,20 @@ ride_id_t TileElement::GetRideIndex() const
         case TileElementType::Path:
             return AsPath()->GetRideIndex();
         default:
-            return RIDE_ID_NULL;
+            return RideId::GetNull();
     }
 }
 
 void TileElement::ClearAs(TileElementType newType)
 {
-    type = 0;
+    Type = 0;
     SetType(newType);
     Flags = 0;
-    base_height = MINIMUM_LAND_HEIGHT;
-    clearance_height = MINIMUM_LAND_HEIGHT;
-    owner = 0;
-    std::fill_n(pad_05, sizeof(pad_05), 0x00);
-    std::fill_n(pad_08, sizeof(pad_08), 0x00);
+    BaseHeight = MINIMUM_LAND_HEIGHT;
+    ClearanceHeight = MINIMUM_LAND_HEIGHT;
+    Owner = 0;
+    std::fill_n(Pad05, sizeof(Pad05), 0x00);
+    std::fill_n(Pad08, sizeof(Pad08), 0x00);
 }
 
 // Rotate both of the values amount
@@ -151,7 +153,7 @@ const QuarterTile QuarterTile::Rotate(uint8_t amount) const
             return QuarterTile{ static_cast<uint8_t>(rotVal1 | rotVal2) };
         }
         default:
-            log_error("Tried to rotate QuarterTile invalid amount.");
+            LOG_ERROR("Tried to rotate QuarterTile invalid amount.");
             return QuarterTile{ 0 };
     }
 }

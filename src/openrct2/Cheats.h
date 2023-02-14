@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -33,6 +33,7 @@ extern bool gCheatsAllowArbitraryRideTypeChanges;
 extern bool gCheatsIgnoreResearchStatus;
 extern bool gCheatsEnableAllDrawableTrackPieces;
 extern bool gCheatsAllowTrackPlaceInvalidHeights;
+extern bool gCheatsAllowRegularPathAsQueue;
 
 enum class CheatType : int32_t
 {
@@ -85,6 +86,8 @@ enum class CheatType : int32_t
     CreateDucks,
     RemoveDucks,
     AllowTrackPlaceInvalidHeights,
+    NoCapOnQueueLengthDummy, // Removed; this dummy exists only for deserialisation parks that had it saved
+    AllowRegularPathAsQueue,
     Count,
 };
 
@@ -108,7 +111,7 @@ enum
     OBJECT_UMBRELLA
 };
 
-#define CHEATS_GIVE_GUESTS_MONEY MONEY(1000, 00)
+constexpr auto CHEATS_GIVE_GUESTS_MONEY = 1000.00_GBP;
 #define CHEATS_TRAM_INCREMENT 250
 #define CHEATS_DUCK_INCREMENT 20
 #define CHEATS_STAFF_FAST_SPEED 0xFF

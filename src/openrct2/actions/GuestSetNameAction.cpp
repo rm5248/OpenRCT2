@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -20,13 +20,13 @@
 #include "../windows/Intent.h"
 #include "../world/Park.h"
 
-GuestSetNameAction::GuestSetNameAction(uint16_t spriteIndex, const std::string& name)
+GuestSetNameAction::GuestSetNameAction(EntityId spriteIndex, const std::string& name)
     : _spriteIndex(spriteIndex)
     , _name(name)
 {
 }
 
-uint16_t GuestSetNameAction::GetSpriteIndex() const
+EntityId GuestSetNameAction::GetSpriteIndex() const
 {
     return _spriteIndex;
 }
@@ -56,7 +56,7 @@ void GuestSetNameAction::Serialise(DataSerialiser& stream)
 
 GameActions::Result GuestSetNameAction::Query() const
 {
-    if (_spriteIndex >= MAX_ENTITIES)
+    if (_spriteIndex.ToUnderlying() >= MAX_ENTITIES || _spriteIndex.IsNull())
     {
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_NAME_GUEST, STR_NONE);
     }
@@ -64,7 +64,7 @@ GameActions::Result GuestSetNameAction::Query() const
     auto guest = TryGetEntity<Guest>(_spriteIndex);
     if (guest == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_NAME_GUEST, STR_NONE);
     }
 
@@ -76,7 +76,7 @@ GameActions::Result GuestSetNameAction::Execute() const
     auto guest = TryGetEntity<Guest>(_spriteIndex);
     if (guest == nullptr)
     {
-        log_warning("Invalid game command for sprite %u", _spriteIndex);
+        LOG_WARNING("Invalid game command for sprite %u", _spriteIndex);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_NAME_GUEST, STR_NONE);
     }
 
@@ -94,10 +94,10 @@ GameActions::Result GuestSetNameAction::Execute() const
     // Easter egg functions are for guests only
     guest->HandleEasterEggName();
 
-    gfx_invalidate_screen();
+    GfxInvalidateScreen();
 
     auto intent = Intent(INTENT_ACTION_REFRESH_GUEST_LIST);
-    context_broadcast_intent(&intent);
+    ContextBroadcastIntent(&intent);
 
     auto res = GameActions::Result();
     res.Position = guest->GetLocation();

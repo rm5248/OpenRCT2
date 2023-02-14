@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,9 +13,14 @@
 #include "../entity/Staff.h"
 #include "../interface/Window.h"
 
-StaffFireAction::StaffFireAction(uint16_t spriteId)
+StaffFireAction::StaffFireAction(EntityId spriteId)
     : _spriteId(spriteId)
 {
+}
+
+void StaffFireAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit("id", _spriteId);
 }
 
 uint16_t StaffFireAction::GetActionFlags() const
@@ -31,16 +36,16 @@ void StaffFireAction::Serialise(DataSerialiser& stream)
 
 GameActions::Result StaffFireAction::Query() const
 {
-    if (_spriteId >= MAX_ENTITIES)
+    if (_spriteId.ToUnderlying() >= MAX_ENTITIES || _spriteId.IsNull())
     {
-        log_error("Invalid spriteId. spriteId = %u", _spriteId);
+        LOG_ERROR("Invalid spriteId. spriteId = %u", _spriteId);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
 
     auto staff = TryGetEntity<Staff>(_spriteId);
     if (staff == nullptr)
     {
-        log_error("Invalid spriteId. spriteId = %u", _spriteId);
+        LOG_ERROR("Invalid spriteId. spriteId = %u", _spriteId);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
 
@@ -52,12 +57,12 @@ GameActions::Result StaffFireAction::Execute() const
     auto staff = TryGetEntity<Staff>(_spriteId);
     if (staff == nullptr)
     {
-        log_error("Invalid spriteId. spriteId = %u", _spriteId);
+        LOG_ERROR("Invalid spriteId. spriteId = %u", _spriteId);
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_NONE, STR_NONE);
     }
-    window_close_by_class(WC_FIRE_PROMPT);
-    peep_sprite_remove(staff);
+    WindowCloseByClass(WindowClass::FirePrompt);
+    PeepEntityRemove(staff);
     // Due to patrol areas best to invalidate the whole screen on removal of staff
-    gfx_invalidate_screen();
+    GfxInvalidateScreen();
     return GameActions::Result();
 }

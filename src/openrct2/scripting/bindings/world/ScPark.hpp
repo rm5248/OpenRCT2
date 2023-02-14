@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2021 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -59,7 +59,7 @@ namespace OpenRCT2::Scripting
         money64 companyValue_get() const;
         void companyValue_set(money64 value);
 
-        money16 totalRideValueForMoney_get() const;
+        money64 totalRideValueForMoney_get() const;
 
         uint32_t totalAdmissions_get() const;
         void totalAdmissions_set(uint32_t value);

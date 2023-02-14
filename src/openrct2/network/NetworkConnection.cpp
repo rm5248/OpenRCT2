@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -12,21 +12,18 @@
 #    include "NetworkConnection.h"
 
 #    include "../core/String.hpp"
+#    include "../localisation/Formatting.h"
 #    include "../localisation/Localisation.h"
-#    include "../platform/platform.h"
+#    include "../platform/Platform.h"
 #    include "Socket.h"
 #    include "network.h"
 
 constexpr size_t NETWORK_DISCONNECT_REASON_BUFFER_SIZE = 256;
 constexpr size_t NetworkBufferSize = 1024 * 64; // 64 KiB, maximum packet size.
 
-NetworkConnection::NetworkConnection()
+NetworkConnection::NetworkConnection() noexcept
 {
     ResetLastPacketTime();
-}
-
-NetworkConnection::~NetworkConnection()
-{
 }
 
 NetworkReadPacket NetworkConnection::ReadPacket()
@@ -87,7 +84,7 @@ NetworkReadPacket NetworkConnection::ReadPacket()
         if (InboundPacket.Data.size() == header.Size)
         {
             // Received complete packet.
-            _lastPacketTime = platform_get_ticks();
+            _lastPacketTime = Platform::GetTicks();
 
             RecordPacketStats(InboundPacket, false);
 
@@ -155,7 +152,7 @@ void NetworkConnection::QueuePacket(NetworkPacket&& packet, bool front)
     }
 }
 
-void NetworkConnection::Disconnect()
+void NetworkConnection::Disconnect() noexcept
 {
     ShouldDisconnect = true;
 }
@@ -173,15 +170,15 @@ void NetworkConnection::SendQueuedPackets()
     }
 }
 
-void NetworkConnection::ResetLastPacketTime()
+void NetworkConnection::ResetLastPacketTime() noexcept
 {
-    _lastPacketTime = platform_get_ticks();
+    _lastPacketTime = Platform::GetTicks();
 }
 
-bool NetworkConnection::ReceivedPacketRecently()
+bool NetworkConnection::ReceivedPacketRecently() const noexcept
 {
 #    ifndef DEBUG
-    if (platform_get_ticks() > _lastPacketTime + 7000)
+    if (Platform::GetTicks() > _lastPacketTime + 7000)
     {
         return false;
     }
@@ -189,7 +186,7 @@ bool NetworkConnection::ReceivedPacketRecently()
     return true;
 }
 
-const utf8* NetworkConnection::GetLastDisconnectReason() const
+const utf8* NetworkConnection::GetLastDisconnectReason() const noexcept
 {
     return this->_lastDisconnectReason.c_str();
 }
@@ -199,10 +196,10 @@ void NetworkConnection::SetLastDisconnectReason(std::string_view src)
     _lastDisconnectReason = src;
 }
 
-void NetworkConnection::SetLastDisconnectReason(const rct_string_id string_id, void* args)
+void NetworkConnection::SetLastDisconnectReason(const StringId string_id, void* args)
 {
     char buffer[NETWORK_DISCONNECT_REASON_BUFFER_SIZE];
-    format_string(buffer, NETWORK_DISCONNECT_REASON_BUFFER_SIZE, string_id, args);
+    OpenRCT2::FormatStringLegacy(buffer, NETWORK_DISCONNECT_REASON_BUFFER_SIZE, string_id, args);
     SetLastDisconnectReason(buffer);
 }
 

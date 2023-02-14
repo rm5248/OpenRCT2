@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include "../Identifiers.h"
 #include "../common.h"
+#include "../core/String.hpp"
 
 #include <algorithm>
 #include <array>
@@ -34,6 +36,7 @@ namespace News
         Peeps,
         Award,
         Graph,
+        Campaign,
         Count
     };
 
@@ -79,6 +82,7 @@ namespace News
                 case News::ItemType::Peeps:
                 case News::ItemType::Award:
                 case News::ItemType::Graph:
+                case News::ItemType::Campaign:
                     return News::ItemTypeProperty::HasSubject;
                 case News::ItemType::Ride:
                 case News::ItemType::PeepOnRide:
@@ -290,7 +294,8 @@ namespace News
 
     std::optional<CoordsXYZ> GetSubjectLocation(News::ItemType type, int32_t subject);
 
-    News::Item* AddItemToQueue(News::ItemType type, rct_string_id string_id, uint32_t assoc, const Formatter& formatter);
+    News::Item* AddItemToQueue(News::ItemType type, StringId string_id, uint32_t assoc, const Formatter& formatter);
+    News::Item* AddItemToQueue(News::ItemType type, StringId string_id, EntityId assoc, const Formatter& formatter);
     News::Item* AddItemToQueue(News::ItemType type, const utf8* text, uint32_t assoc);
 
     bool CheckIfItemRequiresAssoc(News::ItemType type);

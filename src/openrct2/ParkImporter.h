@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -26,12 +26,15 @@ namespace OpenRCT2
     struct IStream;
 }
 
-struct scenario_index_entry;
+struct ScenarioIndexEntry;
 
 struct ParkLoadResult final
 {
 public:
     ObjectList RequiredObjects;
+    bool SemiCompatibleVersion{};
+    uint32_t MinVersion{};
+    uint32_t TargetVersion{};
 
     explicit ParkLoadResult(ObjectList&& requiredObjects)
         : RequiredObjects(std::move(requiredObjects))
@@ -47,14 +50,14 @@ struct IParkImporter
 public:
     virtual ~IParkImporter() = default;
 
-    virtual ParkLoadResult Load(const utf8* path) abstract;
-    virtual ParkLoadResult LoadSavedGame(const utf8* path, bool skipObjectCheck = false) abstract;
-    virtual ParkLoadResult LoadScenario(const utf8* path, bool skipObjectCheck = false) abstract;
+    virtual ParkLoadResult Load(const u8string& path) abstract;
+    virtual ParkLoadResult LoadSavedGame(const u8string& path, bool skipObjectCheck = false) abstract;
+    virtual ParkLoadResult LoadScenario(const u8string& path, bool skipObjectCheck = false) abstract;
     virtual ParkLoadResult LoadFromStream(
-        OpenRCT2::IStream* stream, bool isScenario, bool skipObjectCheck = false, const utf8* path = String::Empty) abstract;
+        OpenRCT2::IStream* stream, bool isScenario, bool skipObjectCheck = false, const u8string& path = {}) abstract;
 
     virtual void Import() abstract;
-    virtual bool GetDetails(scenario_index_entry* dst) abstract;
+    virtual bool GetDetails(ScenarioIndexEntry* dst) abstract;
 };
 
 namespace ParkImporter
@@ -80,17 +83,6 @@ public:
     }
 };
 
-class UnsupportedRCTCFlagException : public std::exception
-{
-public:
-    uint8_t const Flag;
-
-    explicit UnsupportedRCTCFlagException(uint8_t flag)
-        : Flag(flag)
-    {
-    }
-};
-
 class UnsupportedRideTypeException : public std::exception
 {
 public:
@@ -98,6 +90,19 @@ public:
 
     explicit UnsupportedRideTypeException(ObjectEntryIndex type)
         : Type(type)
+    {
+    }
+};
+
+class UnsupportedVersionException : public std::exception
+{
+public:
+    uint32_t const MinVersion;
+    uint32_t const TargetVersion;
+
+    explicit UnsupportedVersionException(uint32_t minVersion, uint32_t targetVersion)
+        : MinVersion(minVersion)
+        , TargetVersion(targetVersion)
     {
     }
 };

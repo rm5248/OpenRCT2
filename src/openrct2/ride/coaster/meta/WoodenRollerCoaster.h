@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -19,11 +19,11 @@ constexpr const RideTypeDescriptor WoodenRollerCoasterRTD =
 {
     SET_FIELD(AlternateType, RIDE_TYPE_NULL),
     SET_FIELD(Category, RIDE_CATEGORY_ROLLERCOASTER),
-    SET_FIELD(EnabledTrackPieces, {TRACK_FLAT, TRACK_STRAIGHT, TRACK_STATION_END, TRACK_LIFT_HILL, TRACK_FLAT_ROLL_BANKING, TRACK_VERTICAL_LOOP, TRACK_SLOPE, TRACK_SLOPE_STEEP, TRACK_SLOPE_CURVE, TRACK_SLOPE_CURVE_STEEP, TRACK_S_BEND, TRACK_CURVE_SMALL, TRACK_CURVE, TRACK_HELIX_SMALL, TRACK_BRAKES, TRACK_ON_RIDE_PHOTO, TRACK_WATER_SPLASH, TRACK_SLOPE_CURVE_BANKED, TRACK_BLOCK_BRAKES, TRACK_SLOPE_ROLL_BANKING}),
+    SET_FIELD(EnabledTrackPieces, {TRACK_FLAT, TRACK_STRAIGHT, TRACK_STATION_END, TRACK_LIFT_HILL, TRACK_FLAT_ROLL_BANKING, TRACK_VERTICAL_LOOP, TRACK_SLOPE, TRACK_SLOPE_STEEP_UP, TRACK_SLOPE_STEEP_DOWN, TRACK_SLOPE_CURVE, TRACK_SLOPE_CURVE_STEEP, TRACK_S_BEND, TRACK_CURVE_SMALL, TRACK_CURVE, TRACK_HELIX_SMALL, TRACK_BRAKES, TRACK_ON_RIDE_PHOTO, TRACK_WATER_SPLASH, TRACK_SLOPE_CURVE_BANKED, TRACK_BLOCK_BRAKES, TRACK_SLOPE_ROLL_BANKING}),
     SET_FIELD(ExtraTrackPieces, {TRACK_BOOSTER}),
     SET_FIELD(CoveredTrackPieces, {}),
     SET_FIELD(StartTrackPiece, TrackElemType::EndStation),
-    SET_FIELD(TrackPaintFunction, get_track_paint_function_wooden_rc),
+    SET_FIELD(TrackPaintFunction, GetTrackPaintFunctionWoodenRC),
     SET_FIELD(Flags, RIDE_TYPE_FLAGS_TRACK_HAS_3_COLOURS | RIDE_TYPE_FLAG_HAS_LEAVE_WHEN_ANOTHER_VEHICLE_ARRIVES_AT_STATION |
                      RIDE_TYPE_FLAGS_COMMON_COASTER | RIDE_TYPE_FLAGS_COMMON_COASTER_NON_ALT | RIDE_TYPE_FLAG_HAS_LARGE_CURVES |
                      RIDE_TYPE_FLAG_PEEP_CHECK_GFORCES | RIDE_TYPE_FLAG_ALLOW_MULTIPLE_CIRCUITS),
@@ -37,10 +37,10 @@ constexpr const RideTypeDescriptor WoodenRollerCoasterRTD =
     SET_FIELD(Heights, { 41, 24, 8, 11, }),
     SET_FIELD(MaxMass, 19),
     SET_FIELD(LiftData, { OpenRCT2::Audio::SoundId::LiftWood, 5, 7 }),
-    SET_FIELD(RatingsCalculationFunction, ride_ratings_calculate_wooden_roller_coaster),
+    SET_FIELD(RatingsCalculationFunction, RideRatingsCalculateWoodenRollerCoaster),
     SET_FIELD(RatingsMultipliers, { 52, 33, 8 }),
     SET_FIELD(UpkeepCosts, { 40, 20, 80, 10, 3, 10 }),
-    SET_FIELD(BuildCosts, { 75, 7, 50, }),
+    SET_FIELD(BuildCosts, { 37.50_GBP, 3.50_GBP, 50, }),
     SET_FIELD(DefaultPrices, { 20, 20 }),
     SET_FIELD(DefaultMusic, MUSIC_OBJECT_WILD_WEST),
     SET_FIELD(PhotoItem, ShopItem::Photo3),
@@ -54,5 +54,6 @@ constexpr const RideTypeDescriptor WoodenRollerCoasterRTD =
     )),
     SET_FIELD(ColourPreview, { SPR_RIDE_DESIGN_PREVIEW_WOODEN_ROLLER_COASTER_TRACK, SPR_RIDE_DESIGN_PREVIEW_WOODEN_ROLLER_COASTER_SUPPORTS }),
     SET_FIELD(ColourKey, RideColourKey::Ride),
+    SET_FIELD(Name, "wooden_rc"),
 };
 // clang-format on

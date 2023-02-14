@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "../Identifiers.h"
 #include "../common.h"
 #include "../ride/RideTypes.h"
 #include "../ride/Station.h"
@@ -23,7 +24,7 @@ struct SmallSceneryEntry;
 struct WallSceneryEntry;
 struct PathBitEntry;
 struct BannerSceneryEntry;
-struct rct_footpath_entry;
+struct FootpathEntry;
 class LargeSceneryObject;
 class TerrainSurfaceObject;
 class TerrainEdgeObject;
@@ -49,11 +50,11 @@ struct BannerElement;
 
 struct TileElementBase
 {
-    uint8_t type;             // 0
-    uint8_t Flags;            // 1. Upper nibble: flags. Lower nibble: occupied quadrants (one bit per quadrant).
-    uint8_t base_height;      // 2
-    uint8_t clearance_height; // 3
-    uint8_t owner;            // 4
+    uint8_t Type;            // 0
+    uint8_t Flags;           // 1. Upper nibble: flags. Lower nibble: occupied quadrants (one bit per quadrant).
+    uint8_t BaseHeight;      // 2
+    uint8_t ClearanceHeight; // 3
+    uint8_t Owner;           // 4
 
     void Remove();
 
@@ -171,12 +172,12 @@ struct TileElementBase
  */
 struct TileElement : public TileElementBase
 {
-    uint8_t pad_05[3];
-    uint8_t pad_08[8];
+    uint8_t Pad05[3];
+    uint8_t Pad08[8];
 
     void ClearAs(TileElementType newType);
 
-    ride_id_t GetRideIndex() const;
+    RideId GetRideIndex() const;
 
     void SetBannerIndex(BannerIndex newIndex);
     void RemoveBannerEntry();
@@ -197,7 +198,7 @@ private:
     uint8_t EdgeStyle;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
-    uint8_t pad_0B[5];
+    uint8_t Pad0B[5];
 #pragma clang diagnostic pop
 
 public:
@@ -245,7 +246,7 @@ private:
     union
     {
         uint8_t AdditionStatus; // 13, only used for litter bins
-        ride_id_t rideIndex;    // 13
+        RideId rideIndex;       // 13
     };
     ::StationIndex StationIndex; // 15
 
@@ -275,8 +276,8 @@ public:
     Direction GetSlopeDirection() const;
     void SetSlopeDirection(Direction newSlope);
 
-    ride_id_t GetRideIndex() const;
-    void SetRideIndex(ride_id_t newRideIndex);
+    RideId GetRideIndex() const;
+    void SetRideIndex(RideId newRideIndex);
 
     ::StationIndex GetStationIndex() const;
     void SetStationIndex(::StationIndex newStationIndex);
@@ -342,15 +343,15 @@ private:
                 // Contains the brake/booster speed, divided by 2.
                 uint8_t BrakeBoosterSpeed;
             };
-            uint8_t StationIndex;
-        };
+            StationIndex stationIndex;
+        } URide;
         struct
         {
             uint16_t MazeEntry; // 6
-        };
+        } UMaze;
     };
     uint8_t Flags2;
-    ride_id_t RideIndex;
+    RideId RideIndex;
     ride_type_t RideType;
 
 public:
@@ -363,14 +364,14 @@ public:
     uint8_t GetSequenceIndex() const;
     void SetSequenceIndex(uint8_t newSequenceIndex);
 
-    ride_id_t GetRideIndex() const;
-    void SetRideIndex(ride_id_t newRideIndex);
+    RideId GetRideIndex() const;
+    void SetRideIndex(RideId newRideIndex);
 
     uint8_t GetColourScheme() const;
     void SetColourScheme(uint8_t newColourScheme);
 
-    uint8_t GetStationIndex() const;
-    void SetStationIndex(uint8_t newStationIndex);
+    StationIndex GetStationIndex() const;
+    void SetStationIndex(StationIndex newStationIndex);
 
     bool HasChain() const;
     void SetHasChain(bool on);
@@ -381,8 +382,8 @@ public:
     bool IsInverted() const;
     void SetInverted(bool inverted);
 
-    bool BlockBrakeClosed() const;
-    void SetBlockBrakeClosed(bool isClosed);
+    bool IsBrakeClosed() const;
+    void SetBrakeClosed(bool isClosed);
 
     bool IsIndestructible() const;
     void SetIsIndestructible(bool isIndestructible);
@@ -429,17 +430,16 @@ struct SmallSceneryElement : TileElementBase
 private:
     ObjectEntryIndex entryIndex; // 5
     uint8_t age;                 // 7
-    uint8_t colour_1;            // 8
-    uint8_t colour_2;            // 9
+    uint8_t Colour[3];           // 8
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
-    uint8_t pad_0A[6];
+    uint8_t Pad0B[5];
 #pragma clang diagnostic pop
 
 public:
     ObjectEntryIndex GetEntryIndex() const;
     void SetEntryIndex(ObjectEntryIndex newIndex);
-    SmallSceneryEntry* GetEntry() const;
+    const SmallSceneryEntry* GetEntry() const;
     uint8_t GetAge() const;
     void SetAge(uint8_t newAge);
     void IncreaseAge(const CoordsXY& sceneryPos);
@@ -449,6 +449,8 @@ public:
     void SetPrimaryColour(colour_t colour);
     colour_t GetSecondaryColour() const;
     void SetSecondaryColour(colour_t colour);
+    colour_t GetTertiaryColour() const;
+    void SetTertiaryColour(colour_t colour);
     bool NeedsSupports() const;
     void SetNeedsSupports();
     void UpdateAge(const CoordsXY& sceneryPos);
@@ -483,6 +485,8 @@ public:
     void SetPrimaryColour(colour_t colour);
     colour_t GetSecondaryColour() const;
     void SetSecondaryColour(colour_t colour);
+    colour_t GetTertiaryColour() const;
+    void SetTertiaryColour(colour_t colour);
 
     Banner* GetBanner() const;
     ::BannerIndex GetBannerIndex() const;
@@ -506,13 +510,13 @@ private:
     uint8_t animation;           // 0C 0b_dfff_ft00 d = direction, f = frame num, t = across track flag (not used)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
-    uint8_t pad_0D[3];
+    uint8_t Pad0D[3];
 #pragma clang diagnostic pop
 
 public:
     uint16_t GetEntryIndex() const;
     void SetEntryIndex(uint16_t newIndex);
-    WallSceneryEntry* GetEntry() const;
+    const WallSceneryEntry* GetEntry() const;
 
     uint8_t GetSlope() const;
     void SetSlope(uint8_t newslope);
@@ -545,24 +549,24 @@ struct EntranceElement : TileElementBase
 private:
     uint8_t entranceType;      // 5
     uint8_t SequenceIndex;     // 6. Only uses the lower nibble.
-    uint8_t StationIndex;      // 7
+    StationIndex stationIndex; // 7
     ObjectEntryIndex PathType; // 8
-    ride_id_t rideIndex;       // A
+    RideId rideIndex;          // A
     uint8_t flags2;            // C
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
-    uint8_t pad_0D[3];
+    uint8_t Pad0D[3];
 #pragma clang diagnostic pop
 
 public:
     uint8_t GetEntranceType() const;
     void SetEntranceType(uint8_t newType);
 
-    ride_id_t GetRideIndex() const;
-    void SetRideIndex(ride_id_t newRideIndex);
+    RideId GetRideIndex() const;
+    void SetRideIndex(RideId newRideIndex);
 
-    uint8_t GetStationIndex() const;
-    void SetStationIndex(uint8_t newStationIndex);
+    StationIndex GetStationIndex() const;
+    void SetStationIndex(StationIndex newStationIndex);
 
     uint8_t GetSequenceIndex() const;
     void SetSequenceIndex(uint8_t newSequenceIndex);
@@ -593,11 +597,11 @@ private:
     uint8_t AllowedEdges; // 8
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
-    uint8_t pad_09[7];
+    uint8_t Pad09[7];
 #pragma clang diagnostic pop
 public:
     Banner* GetBanner() const;
-    BannerSceneryEntry* GetEntry() const;
+    const BannerSceneryEntry* GetEntry() const;
 
     BannerIndex GetIndex() const;
     void SetIndex(BannerIndex newIndex);
@@ -704,4 +708,4 @@ enum
     LANDSCAPE_DOOR_OPEN = 3,
 };
 
-bool tile_element_is_underground(TileElement* tileElement);
+bool TileElementIsUnderground(TileElement* tileElement);

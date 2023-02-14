@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -286,6 +286,12 @@ namespace OpenRCT2::Scripting
         return DukValue::take_from_stack(ctx);
     }
 
+    template<> inline DukValue ToDuk(duk_context* ctx, const uint16_t& value)
+    {
+        duk_push_int(ctx, value);
+        return DukValue::take_from_stack(ctx);
+    }
+
     template<> inline DukValue ToDuk(duk_context* ctx, const int32_t& value)
     {
         duk_push_int(ctx, value);
@@ -328,7 +334,23 @@ namespace OpenRCT2::Scripting
         return result;
     }
 
+    template<> MapRange inline FromDuk(const DukValue& d)
+    {
+        MapRange range;
+        range.Point1 = FromDuk<CoordsXY>(d["leftTop"]);
+        range.Point2 = FromDuk<CoordsXY>(d["rightBottom"]);
+        return range.Normalise();
+    }
+
     template<> DukValue inline ToDuk(duk_context* ctx, const CoordsXY& coords)
+    {
+        DukObject dukCoords(ctx);
+        dukCoords.Set("x", coords.x);
+        dukCoords.Set("y", coords.y);
+        return dukCoords.Take();
+    }
+
+    template<> DukValue inline ToDuk(duk_context* ctx, const TileCoordsXY& coords)
     {
         DukObject dukCoords(ctx);
         dukCoords.Set("x", coords.x);
@@ -397,6 +419,14 @@ namespace OpenRCT2::Scripting
         return dukGForces.Take();
     }
 
+    template<> inline DukValue ToDuk(duk_context* ctx, const VehicleSpriteGroup& value)
+    {
+        DukObject dukSpriteGroup(ctx);
+        dukSpriteGroup.Set("imageId", value.imageId);
+        dukSpriteGroup.Set("spriteNumImages", OpenRCT2::Entity::Yaw::NumSpritesPrecision(value.spritePrecision));
+        return dukSpriteGroup.Take();
+    }
+
     template<> inline CoordsXYZD FromDuk(const DukValue& value)
     {
         CoordsXYZD result;
@@ -434,6 +464,8 @@ namespace OpenRCT2::Scripting
         }
         return OBJECT_ENTRY_INDEX_NULL;
     }
+
+    uint32_t ImageFromDuk(const DukValue& d);
 
 } // namespace OpenRCT2::Scripting
 

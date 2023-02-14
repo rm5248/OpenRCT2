@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -18,15 +18,15 @@
 #include <openrct2/localisation/Localisation.h>
 
 // clang-format off
-static rct_widget window_map_tooltip_widgets[] = {
+static Widget window_map_tooltip_widgets[] = {
     MakeWidget({0, 0}, {200, 30}, WindowWidgetType::ImgBtn, WindowColour::Primary),
     WIDGETS_END,
 };
 
-static void WindowMapTooltipUpdate(rct_window *w);
-static void WindowMapTooltipPaint(rct_window *w, rct_drawpixelinfo *dpi);
+static void WindowMapTooltipUpdate(WindowBase *w);
+static void WindowMapTooltipPaint(WindowBase *w, DrawPixelInfo *dpi);
 
-static rct_window_event_list window_map_tooltip_events([](auto& events)
+static WindowEventList window_map_tooltip_events([](auto& events)
 {
     events.update = &WindowMapTooltipUpdate;
     events.paint = &WindowMapTooltipPaint;
@@ -61,31 +61,32 @@ void WindowMapTooltipUpdateVisibility()
     if (ThemeGetFlags() & UITHEME_FLAG_USE_FULL_BOTTOM_TOOLBAR)
     {
         // The map tooltip is drawn by the bottom toolbar
-        window_invalidate_by_class(WC_BOTTOM_TOOLBAR);
+        WindowInvalidateByClass(WindowClass::BottomToolbar);
         return;
     }
 
-    const CursorState* state = context_get_cursor_state();
+    const CursorState* state = ContextGetCursorState();
     auto cursor = state->position;
     auto cursorChange = cursor - _lastCursor;
 
     // Check for cursor movement
     _cursorHoldDuration++;
-    if (abs(cursorChange.x) > 5 || abs(cursorChange.y) > 5 || (input_test_flag(INPUT_FLAG_5)))
+    if (abs(cursorChange.x) > 5 || abs(cursorChange.y) > 5 || (InputTestFlag(INPUT_FLAG_5))
+        || InputGetState() == InputState::ViewportRight)
         _cursorHoldDuration = 0;
 
     _lastCursor = cursor;
 
     // Show or hide tooltip
-    rct_string_id stringId;
-    std::memcpy(&stringId, _mapTooltipArgs.Data(), sizeof(rct_string_id));
+    StringId stringId;
+    std::memcpy(&stringId, _mapTooltipArgs.Data(), sizeof(StringId));
 
     if (_cursorHoldDuration < 25 || stringId == STR_NONE
         || InputTestPlaceObjectModifier(
             static_cast<PLACE_OBJECT_MODIFIER>(PLACE_OBJECT_MODIFIER_COPY_Z | PLACE_OBJECT_MODIFIER_SHIFT_Z))
-        || window_find_by_class(WC_ERROR) != nullptr)
+        || WindowFindByClass(WindowClass::Error) != nullptr)
     {
-        window_close_by_class(WC_MAP_TOOLTIP);
+        WindowCloseByClass(WindowClass::MapTooltip);
     }
     else
     {
@@ -99,18 +100,18 @@ void WindowMapTooltipUpdateVisibility()
  */
 static void WindowMapTooltipOpen()
 {
-    rct_window* w;
+    WindowBase* w;
 
     constexpr int32_t width = 200;
     constexpr int32_t height = 44;
-    const CursorState* state = context_get_cursor_state();
+    const CursorState* state = ContextGetCursorState();
     ScreenCoordsXY pos = { state->position.x - (width / 2), state->position.y + 15 };
 
-    w = window_find_by_class(WC_MAP_TOOLTIP);
+    w = WindowFindByClass(WindowClass::MapTooltip);
     if (w == nullptr)
     {
         w = WindowCreate(
-            pos, width, height, &window_map_tooltip_events, WC_MAP_TOOLTIP,
+            pos, width, height, &window_map_tooltip_events, WindowClass::MapTooltip,
             WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_NO_BACKGROUND);
         w->widgets = window_map_tooltip_widgets;
     }
@@ -127,7 +128,7 @@ static void WindowMapTooltipOpen()
  *
  *  rct2: 0x006EE8CE
  */
-static void WindowMapTooltipUpdate(rct_window* w)
+static void WindowMapTooltipUpdate(WindowBase* w)
 {
     w->Invalidate();
 }
@@ -136,10 +137,10 @@ static void WindowMapTooltipUpdate(rct_window* w)
  *
  *  rct2: 0x006EE894
  */
-static void WindowMapTooltipPaint(rct_window* w, rct_drawpixelinfo* dpi)
+static void WindowMapTooltipPaint(WindowBase* w, DrawPixelInfo* dpi)
 {
-    rct_string_id stringId;
-    std::memcpy(&stringId, _mapTooltipArgs.Data(), sizeof(rct_string_id));
+    StringId stringId;
+    std::memcpy(&stringId, _mapTooltipArgs.Data(), sizeof(StringId));
     if (stringId == STR_NONE)
     {
         return;

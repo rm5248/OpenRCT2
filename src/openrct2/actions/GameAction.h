@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -79,6 +79,14 @@ public:
         Visit("direction", param.direction);
     }
 
+    void Visit(MapRange& param)
+    {
+        Visit("x1", param.Point1.x);
+        Visit("y1", param.Point1.y);
+        Visit("x2", param.Point2.x);
+        Visit("y2", param.Point2.y);
+    }
+
     template<typename T> void Visit(std::string_view name, T& param)
     {
         static_assert(std::is_arithmetic_v<T> || std::is_enum_v<T>, "Not an arithmetic type");
@@ -94,7 +102,7 @@ public:
         param = TIdentifier<T, TNull, TTag>::FromUnderlying(value);
     }
 
-    template<typename T, size_t _TypeID> void Visit(std::string_view name, NetworkObjectId_t<T, _TypeID>& param)
+    template<typename T, size_t _TypeID> void Visit(std::string_view name, NetworkObjectId<T, _TypeID>& param)
     {
         Visit(name, param.id);
     }

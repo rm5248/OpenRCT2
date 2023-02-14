@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -30,6 +30,17 @@ ClearAction::ClearAction(MapRange range, ClearableItems itemsToClear)
 {
 }
 
+void ClearAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit(_range);
+    visitor.Visit("itemsToClear", _itemsToClear);
+}
+
+uint16_t ClearAction::GetActionFlags() const
+{
+    return GameAction::GetActionFlags();
+}
+
 void ClearAction::Serialise(DataSerialiser& stream)
 {
     GameAction::Serialise(stream);
@@ -55,7 +66,7 @@ GameActions::Result ClearAction::CreateResult() const
 
     auto x = (_range.GetLeft() + _range.GetRight()) / 2 + 16;
     auto y = (_range.GetTop() + _range.GetBottom()) / 2 + 16;
-    auto z = tile_element_height({ x, y });
+    auto z = TileElementHeight({ x, y });
     result.Position = CoordsXYZ(x, y, z);
 
     return result;
@@ -67,17 +78,13 @@ GameActions::Result ClearAction::QueryExecute(bool executing) const
 
     auto noValidTiles = true;
     auto error = GameActions::Status::Ok;
-    rct_string_id errorMessage = STR_NONE;
+    StringId errorMessage = STR_NONE;
     money32 totalCost = 0;
 
-    auto x0 = std::max(_range.GetLeft(), 32);
-    auto y0 = std::max(_range.GetTop(), 32);
-    auto x1 = std::min(_range.GetRight(), GetMapSizeMaxXY());
-    auto y1 = std::min(_range.GetBottom(), GetMapSizeMaxXY());
-
-    for (int32_t y = y0; y <= y1; y += COORDS_XY_STEP)
+    auto validRange = ClampRangeWithinMap(_range);
+    for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
     {
-        for (int32_t x = x0; x <= x1; x += COORDS_XY_STEP)
+        for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += COORDS_XY_STEP)
         {
             if (LocationValid({ x, y }) && MapCanClearAt({ x, y }))
             {
@@ -120,7 +127,7 @@ money32 ClearAction::ClearSceneryFromTile(const CoordsXY& tilePos, bool executin
     do
     {
         tileEdited = false;
-        tileElement = map_get_first_element_at(tilePos);
+        tileElement = MapGetFirstElementAt(tilePos);
         if (tileElement == nullptr)
             return totalCost;
         do
@@ -187,7 +194,7 @@ money32 ClearAction::ClearSceneryFromTile(const CoordsXY& tilePos, bool executin
                         auto removeSceneryAction = LargeSceneryRemoveAction(
                             { tilePos, tileElement->GetBaseZ(), tileElement->GetDirection() },
                             tileElement->AsLargeScenery()->GetSequenceIndex());
-                        removeSceneryAction.SetFlags(GetFlags() | GAME_COMMAND_FLAG_PATH_SCENERY);
+                        removeSceneryAction.SetFlags(GetFlags() | GAME_COMMAND_FLAG_TRACK_DESIGN);
 
                         auto res = executing ? GameActions::ExecuteNested(&removeSceneryAction)
                                              : GameActions::QueryNested(&removeSceneryAction);
@@ -211,11 +218,11 @@ money32 ClearAction::ClearSceneryFromTile(const CoordsXY& tilePos, bool executin
 void ClearAction::ResetClearLargeSceneryFlag()
 {
     // TODO: Improve efficiency of this
-    for (int32_t y = 0; y < MAXIMUM_MAP_SIZE_TECHNICAL; y++)
+    for (int32_t y = 0; y < gMapSize.y; y++)
     {
-        for (int32_t x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++)
+        for (int32_t x = 0; x < gMapSize.x; x++)
         {
-            auto tileElement = map_get_first_element_at(TileCoordsXY{ x, y });
+            auto tileElement = MapGetFirstElementAt(TileCoordsXY{ x, y });
             do
             {
                 if (tileElement == nullptr)
@@ -231,5 +238,5 @@ void ClearAction::ResetClearLargeSceneryFlag()
 
 bool ClearAction::MapCanClearAt(const CoordsXY& location)
 {
-    return (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gCheatsSandboxMode || map_is_location_owned_or_has_rights(location);
+    return (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gCheatsSandboxMode || MapIsLocationOwnedOrHasRights(location);
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,6 +13,7 @@
 
 #include "../Version.h"
 #include "../drawing/Drawing.h"
+#include "FileSystem.hpp"
 #include "Guard.hpp"
 #include "IStream.hpp"
 #include "Memory.hpp"
@@ -50,12 +51,12 @@ namespace Imaging
 
     static void PngWarning(png_structp, const char* b)
     {
-        log_warning(b);
+        LOG_WARNING(b);
     }
 
     static void PngError(png_structp, const char* b)
     {
-        log_error(b);
+        LOG_ERROR(b);
     }
 
     static Image ReadPng(std::istream& istream, bool expandTo32)
@@ -311,12 +312,7 @@ namespace Imaging
                 return ReadFromFile(path, GetImageFormatFromPath(path));
             default:
             {
-#if defined(_WIN32) && !defined(__MINGW32__)
-                auto pathW = String::ToWideChar(path);
-                std::ifstream fs(pathW, std::ios::binary);
-#else
-                std::ifstream fs(std::string(path), std::ios::binary);
-#endif
+                std::ifstream fs(fs::u8path(path), std::ios::binary);
                 return ReadFromStream(fs, format);
             }
         }
@@ -337,12 +333,7 @@ namespace Imaging
                 break;
             case IMAGE_FORMAT::PNG:
             {
-#if defined(_WIN32) && !defined(__MINGW32__)
-                auto pathW = String::ToWideChar(path);
-                std::ofstream fs(pathW, std::ios::binary);
-#else
-                std::ofstream fs(std::string(path), std::ios::binary);
-#endif
+                std::ofstream fs(fs::u8path(path), std::ios::binary);
                 WritePng(fs, image);
                 break;
             }

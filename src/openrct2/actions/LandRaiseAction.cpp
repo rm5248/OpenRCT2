@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -30,6 +30,13 @@ LandRaiseAction::LandRaiseAction(const CoordsXY& coords, MapRange range, uint8_t
     , _range(range)
     , _selectionType(selectionType)
 {
+}
+
+void LandRaiseAction::AcceptParameters(GameActionParameterVisitor& visitor)
+{
+    visitor.Visit(_coords);
+    visitor.Visit(_range);
+    visitor.Visit("selectionType", _selectionType);
 }
 
 uint16_t LandRaiseAction::GetActionFlags() const
@@ -63,23 +70,17 @@ GameActions::Result LandRaiseAction::QueryExecute(bool isExecuting) const
     if (_selectionType >= MAP_SELECT_TYPE_EDGE_0 && _selectionType <= MAP_SELECT_TYPE_EDGE_3)
         tableRow -= MAP_SELECT_TYPE_EDGE_0 - MAP_SELECT_TYPE_FULL - 1;
 
-    // Keep big coordinates within map boundaries
-    auto aX = std::max<decltype(_range.GetLeft())>(32, _range.GetLeft());
-    auto bX = std::min<decltype(_range.GetRight())>(GetMapSizeMaxXY(), _range.GetRight());
-    auto aY = std::max<decltype(_range.GetTop())>(32, _range.GetTop());
-    auto bY = std::min<decltype(_range.GetBottom())>(GetMapSizeMaxXY(), _range.GetBottom());
+    auto validRange = ClampRangeWithinMap(_range);
 
-    MapRange validRange = MapRange{ aX, aY, bX, bY };
-
-    res.Position = { _coords.x, _coords.y, tile_element_height(_coords) };
+    res.Position = { _coords.x, _coords.y, TileElementHeight(_coords) };
     res.Expenditure = ExpenditureType::Landscaping;
 
     if (isExecuting)
     {
-        OpenRCT2::Audio::Play3D(OpenRCT2::Audio::SoundId::PlaceItem, { _coords.x, _coords.y, tile_element_height(_coords) });
+        OpenRCT2::Audio::Play3D(OpenRCT2::Audio::SoundId::PlaceItem, { _coords.x, _coords.y, TileElementHeight(_coords) });
     }
 
-    uint8_t minHeight = map_get_lowest_land_height(validRange);
+    uint8_t minHeight = MapGetLowestLandHeight(validRange);
     bool withinOwnership = false;
 
     for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
@@ -88,20 +89,20 @@ GameActions::Result LandRaiseAction::QueryExecute(bool isExecuting) const
         {
             if (!LocationValid({ x, y }))
                 continue;
-            auto* surfaceElement = map_get_surface_element_at(CoordsXY{ x, y });
+            auto* surfaceElement = MapGetSurfaceElementAt(CoordsXY{ x, y });
             if (surfaceElement == nullptr)
                 continue;
 
             if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
             {
-                if (!map_is_location_in_park(CoordsXY{ x, y }))
+                if (!MapIsLocationInPark(CoordsXY{ x, y }))
                 {
                     continue;
                 }
             }
             withinOwnership = true;
 
-            uint8_t height = surfaceElement->base_height;
+            uint8_t height = surfaceElement->BaseHeight;
 
             if (height > minHeight)
                 continue;

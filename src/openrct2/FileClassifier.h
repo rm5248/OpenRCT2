@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -10,18 +10,19 @@
 #pragma once
 
 #include "common.h"
+#include "core/String.hpp"
 
-enum
+enum class FileExtension
 {
-    FILE_EXTENSION_UNKNOWN,
-    FILE_EXTENSION_DAT,
-    FILE_EXTENSION_SC4,
-    FILE_EXTENSION_SV4,
-    FILE_EXTENSION_TD4,
-    FILE_EXTENSION_SC6,
-    FILE_EXTENSION_SV6,
-    FILE_EXTENSION_TD6,
-    FILE_EXTENSION_PARK,
+    Unknown,
+    DAT,
+    SC4,
+    SV4,
+    TD4,
+    SC6,
+    SV6,
+    TD6,
+    PARK,
 };
 
 #include <string>
@@ -51,4 +52,4 @@ struct ClassifiedFileInfo
 bool TryClassifyFile(const std::string& path, ClassifiedFileInfo* result);
 bool TryClassifyFile(OpenRCT2::IStream* stream, ClassifiedFileInfo* result);
 
-uint32_t get_file_extension_type(const utf8* path);
+FileExtension GetFileExtensionType(u8string_view path);

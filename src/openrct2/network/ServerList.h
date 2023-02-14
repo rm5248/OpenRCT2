@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -33,7 +33,7 @@ struct ServerListEntry
     bool Local{};
 
     int32_t CompareTo(const ServerListEntry& other) const;
-    bool IsVersionValid() const;
+    bool IsVersionValid() const noexcept;
 
     /**
      * Creates a ServerListEntry object from a JSON object
@@ -60,7 +60,8 @@ public:
     size_t GetCount() const;
     void Add(const ServerListEntry& entry);
     void AddRange(const std::vector<ServerListEntry>& entries);
-    void Clear();
+    void AddOrUpdateRange(const std::vector<ServerListEntry>& entries);
+    void Clear() noexcept;
 
     void ReadAndAddFavourites();
     void WriteFavourites() const;
@@ -73,9 +74,9 @@ public:
 class MasterServerException : public std::exception
 {
 public:
-    rct_string_id StatusText;
+    StringId StatusText;
 
-    MasterServerException(rct_string_id statusText)
+    MasterServerException(StringId statusText)
         : StatusText(statusText)
     {
     }

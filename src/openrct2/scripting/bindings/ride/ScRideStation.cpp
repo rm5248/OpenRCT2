@@ -20,7 +20,7 @@
 
 namespace OpenRCT2::Scripting
 {
-    ScRideStation::ScRideStation(ride_id_t rideId, StationIndex stationIndex)
+    ScRideStation::ScRideStation(RideId rideId, StationIndex stationIndex)
         : _rideId(rideId)
         , _stationIndex(stationIndex)
     {
@@ -118,12 +118,12 @@ namespace OpenRCT2::Scripting
 
     RideStation* ScRideStation::GetRideStation() const
     {
-        auto ride = get_ride(_rideId);
+        auto ride = GetRide(_rideId);
         if (ride != nullptr)
         {
-            if (_stationIndex < std::size(ride->stations))
+            if (_stationIndex.ToUnderlying() < std::size(ride->GetStations()))
             {
-                return &ride->stations[_stationIndex];
+                return &ride->GetStation(_stationIndex);
             }
         }
         return nullptr;

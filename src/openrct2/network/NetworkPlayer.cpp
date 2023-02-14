@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -31,7 +31,7 @@ void NetworkPlayer::Read(NetworkPacket& packet)
 
 void NetworkPlayer::Write(NetworkPacket& packet)
 {
-    packet.WriteString(static_cast<const char*>(Name.c_str()));
+    packet.WriteString(Name);
     packet << Id << Flags << Group << LastAction << LastActionCoord.x << LastActionCoord.y << LastActionCoord.z << MoneySpent
            << CommandsRan;
 }
@@ -40,7 +40,7 @@ void NetworkPlayer::AddMoneySpent(money32 cost)
 {
     MoneySpent += cost;
     CommandsRan++;
-    window_invalidate_by_number(WC_PLAYER, Id);
+    WindowInvalidateByNumber(WindowClass::Player, Id);
 }
 
 #endif

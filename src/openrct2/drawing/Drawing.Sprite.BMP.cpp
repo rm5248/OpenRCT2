@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,7 +9,7 @@
 
 #include "Drawing.h"
 
-template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMagnify(rct_drawpixelinfo& dpi, const DrawSpriteArgs& args)
+template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMagnify(DrawPixelInfo& dpi, const DrawSpriteArgs& args)
 {
     auto& g1 = args.SourceImage;
     auto src = g1.offset + ((static_cast<size_t>(g1.width) * args.SrcY) + args.SrcX);
@@ -17,10 +17,10 @@ template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMagnify(rct_dra
     auto& paletteMap = args.PalMap;
     auto zoomLevel = dpi.zoom_level;
     size_t srcLineWidth = g1.width;
-    size_t dstLineWidth = (static_cast<size_t>(dpi.width) / zoomLevel) + dpi.pitch;
-    uint8_t zoom = 1 / zoomLevel;
-    auto width = args.Width / zoomLevel;
-    auto height = args.Height / zoomLevel;
+    size_t dstLineWidth = zoomLevel.ApplyInversedTo(dpi.width) + dpi.pitch;
+    uint8_t zoom = zoomLevel.ApplyInversedTo(1);
+    auto width = zoomLevel.ApplyInversedTo(args.Width);
+    auto height = zoomLevel.ApplyInversedTo(args.Height);
     for (; height > 0; height -= zoom)
     {
         auto nextSrc = src + srcLineWidth;
@@ -35,7 +35,7 @@ template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMagnify(rct_dra
     }
 }
 
-template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMinify(rct_drawpixelinfo& dpi, const DrawSpriteArgs& args)
+template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMinify(DrawPixelInfo& dpi, const DrawSpriteArgs& args)
 {
     auto& g1 = args.SourceImage;
     auto src = g1.offset + ((static_cast<size_t>(g1.width) * args.SrcY) + args.SrcX);
@@ -44,9 +44,9 @@ template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMinify(rct_draw
     auto width = args.Width;
     auto height = args.Height;
     auto zoomLevel = dpi.zoom_level;
-    size_t srcLineWidth = g1.width * zoomLevel;
-    size_t dstLineWidth = (static_cast<size_t>(dpi.width) / zoomLevel) + dpi.pitch;
-    uint8_t zoom = 1 * zoomLevel;
+    size_t srcLineWidth = zoomLevel.ApplyTo(g1.width);
+    size_t dstLineWidth = zoomLevel.ApplyInversedTo(static_cast<size_t>(dpi.width)) + dpi.pitch;
+    uint8_t zoom = zoomLevel.ApplyTo(1);
     for (; height > 0; height -= zoom)
     {
         auto nextSrc = src + srcLineWidth;
@@ -60,7 +60,7 @@ template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSpriteMinify(rct_draw
     }
 }
 
-template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSprite(rct_drawpixelinfo& dpi, const DrawSpriteArgs& args)
+template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSprite(DrawPixelInfo& dpi, const DrawSpriteArgs& args)
 {
     if (dpi.zoom_level < ZoomLevel{ 0 })
     {
@@ -78,7 +78,7 @@ template<DrawBlendOp TBlendOp> static void FASTCALL DrawBMPSprite(rct_drawpixeli
  *  rct2: 0x0067A690
  * @param imageId Only flags are used.
  */
-void FASTCALL gfx_bmp_sprite_to_buffer(rct_drawpixelinfo& dpi, const DrawSpriteArgs& args)
+void FASTCALL GfxBmpSpriteToBuffer(DrawPixelInfo& dpi, const DrawSpriteArgs& args)
 {
     auto imageId = args.Image;
 
@@ -102,7 +102,7 @@ void FASTCALL gfx_bmp_sprite_to_buffer(rct_drawpixelinfo& dpi, const DrawSpriteA
         // Used for glass.
         DrawBMPSprite<BLEND_TRANSPARENT | BLEND_DST>(dpi, args);
     }
-    else if (!(args.SourceImage.flags & G1_FLAG_BMP))
+    else if (!(args.SourceImage.flags & G1_FLAG_HAS_TRANSPARENCY))
     {
         // Copy raw bitmap data to target
         DrawBMPSprite<BLEND_NONE>(dpi, args);

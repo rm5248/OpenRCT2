@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -32,15 +32,15 @@ public:
      * @return A NetworkGroup object
      * @note json is deliberately left non-const: json_t behaviour changes when const
      */
-    static NetworkGroup FromJson(json_t& json);
+    static NetworkGroup FromJson(const json_t& json);
 
-    const std::string& GetName() const;
+    const std::string& GetName() const noexcept;
     void SetName(std::string_view name);
 
     void Read(NetworkPacket& packet);
-    void Write(NetworkPacket& packet);
+    void Write(NetworkPacket& packet) const;
     void ToggleActionPermission(NetworkPermission index);
-    bool CanPerformAction(NetworkPermission index) const;
+    bool CanPerformAction(NetworkPermission index) const noexcept;
     bool CanPerformCommand(GameCommand command) const;
 
     /**

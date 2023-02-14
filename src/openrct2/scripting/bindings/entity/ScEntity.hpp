@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -29,19 +29,24 @@ namespace OpenRCT2::Scripting
     class ScEntity
     {
     protected:
-        uint16_t _id = SPRITE_INDEX_NULL;
+        EntityId _id{ EntityId::GetNull() };
 
     public:
-        ScEntity(uint16_t id)
+        ScEntity(EntityId id)
             : _id(id)
         {
         }
 
     private:
-        int32_t id_get() const
+        DukValue id_get() const
         {
+            auto ctx = GetContext()->GetScriptEngine().GetContext();
+
             auto entity = GetEntity();
-            return entity != nullptr ? entity->sprite_index : 0;
+            if (entity == nullptr)
+                return ToDuk(ctx, nullptr);
+
+            return ToDuk(ctx, entity->Id.ToUnderlying());
         }
 
         std::string type_get() const

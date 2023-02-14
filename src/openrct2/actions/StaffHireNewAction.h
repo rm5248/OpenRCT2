@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -14,7 +14,7 @@
 
 struct StaffHireNewActionResult
 {
-    uint16_t StaffEntityId = SPRITE_INDEX_NULL;
+    EntityId StaffEntityId = EntityId::GetNull();
 };
 
 class StaffHireNewAction final : public GameActionBase<GameCommand::HireNewStaffMember>

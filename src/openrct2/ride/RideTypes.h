@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -9,16 +9,14 @@
 
 #pragma once
 
-#include "../object/Object.h"
+#include "../Identifiers.h"
+#include "../object/ObjectTypes.h"
 
 #include <cstdint>
 #include <limits>
 #include <type_traits>
 
-enum class ride_id_t : uint16_t;
 struct Ride;
-
-constexpr const ride_id_t RIDE_ID_NULL = static_cast<ride_id_t>(std::numeric_limits<std::underlying_type_t<ride_id_t>>::max());
 
 using ride_type_t = uint16_t;
 
@@ -27,7 +25,7 @@ using ride_type_t = uint16_t;
  */
 struct RideSelection
 {
-    uint8_t Type;
+    ride_type_t Type;
     ObjectEntryIndex EntryIndex;
 
     bool operator==(const RideSelection& other) const

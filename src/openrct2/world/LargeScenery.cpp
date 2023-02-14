@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -26,6 +26,11 @@ colour_t LargeSceneryElement::GetSecondaryColour() const
     return Colour[1];
 }
 
+colour_t LargeSceneryElement::GetTertiaryColour() const
+{
+    return Colour[2];
+}
+
 void LargeSceneryElement::SetPrimaryColour(colour_t newColour)
 {
     assert(newColour <= 31);
@@ -36,6 +41,12 @@ void LargeSceneryElement::SetSecondaryColour(colour_t newColour)
 {
     assert(newColour <= 31);
     Colour[1] = newColour;
+}
+
+void LargeSceneryElement::SetTertiaryColour(colour_t newColour)
+{
+    assert(newColour <= 31);
+    Colour[2] = newColour;
 }
 
 Banner* LargeSceneryElement::GetBanner() const
@@ -77,12 +88,12 @@ ObjectEntryIndex LargeSceneryElement::GetEntryIndex() const
 
 LargeSceneryEntry* LargeSceneryElement::GetEntry() const
 {
-    return get_large_scenery_entry(GetEntryIndex());
+    return GetLargeSceneryEntry(GetEntryIndex());
 }
 
 const LargeSceneryObject* LargeSceneryElement::GetObject() const
 {
-    return static_cast<const LargeSceneryObject*>(object_entry_get_object(ObjectType::LargeScenery, GetEntryIndex()));
+    return static_cast<const LargeSceneryObject*>(ObjectEntryGetObject(ObjectType::LargeScenery, GetEntryIndex()));
 }
 
 uint8_t LargeSceneryElement::GetSequenceIndex() const
@@ -100,7 +111,7 @@ void LargeSceneryElement::SetSequenceIndex(uint8_t sequence)
     SequenceIndex = sequence;
 }
 
-LargeSceneryEntry* get_large_scenery_entry(ObjectEntryIndex entryIndex)
+LargeSceneryEntry* GetLargeSceneryEntry(ObjectEntryIndex entryIndex)
 {
     LargeSceneryEntry* result = nullptr;
     auto& objMgr = OpenRCT2::GetContext()->GetObjectManager();

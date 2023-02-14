@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2023 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -24,17 +24,12 @@
 #include <cstddef>
 #include <cstdint>
 
-using utf8 = char;
-using utf8string = utf8*;
-using const_utf8string = const utf8*;
-
 // Define MAX_PATH for various headers that don't want to include system headers
 // just for MAX_PATH
 #ifndef MAX_PATH
 #    define MAX_PATH 260
 #endif
 
-using codepoint_t = uint32_t;
 using colour_t = uint8_t;
 
 // Gets the name of a symbol as a C string
@@ -42,11 +37,10 @@ using colour_t = uint8_t;
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #    include <unistd.h>
-#    define STUB() log_warning("Function %s at %s:%d is a stub.", __PRETTY_FUNCTION__, __FILE__, __LINE__)
+#    define STUB() LOG_WARNING("Function %s at %s:%d is a stub.", __PRETTY_FUNCTION__, __FILE__, __LINE__)
 #    define _strcmpi _stricmp
 #    define _stricmp(x, y) strcasecmp((x), (y))
 #    define _strnicmp(x, y, n) strncasecmp((x), (y), (n))
-#    define _strdup(x) strdup((x))
 
 #    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #        define RCT2_ENDIANNESS __ORDER_LITTLE_ENDIAN__
@@ -97,10 +91,26 @@ using money64 = fixed64_1dp;
 #define FIXED_1DP(whole, fraction) FIXED_XDP(1, whole, fraction)
 #define FIXED_2DP(whole, fraction) FIXED_XDP(10, whole, fraction)
 
-// Construct a money value in the format MONEY(10,70) to represent 10.70. Fractional part must be two digits.
-#define MONEY(whole, fraction) ((whole)*10 + ((fraction) / 10))
+constexpr money64 operator"" _GBP(long double money) noexcept
+{
+    return money * 10;
+}
 
-#define MONEY_FREE MONEY(0, 00)
+constexpr money64 ToMoney64FromGBP(int32_t money) noexcept
+{
+    return money * 10;
+}
+
+constexpr money64 ToMoney64FromGBP(int64_t money) noexcept
+{
+    return money * 10;
+}
+
+constexpr money64 ToMoney64FromGBP(double money) noexcept
+{
+    return money * 10;
+}
+
 #define MONEY16_UNDEFINED static_cast<money16>(static_cast<uint16_t>(0xFFFF))
 #define MONEY32_UNDEFINED (static_cast<money32>(0x80000000))
 #define MONEY64_UNDEFINED (static_cast<money64>(0x8000000000000000))
@@ -115,20 +125,7 @@ constexpr money64 ToMoney64(money16 value)
     return value == MONEY16_UNDEFINED ? MONEY64_UNDEFINED : value;
 }
 
-constexpr money32 ToMoney32(money64 value)
-{
-    return value == MONEY64_UNDEFINED ? MONEY32_UNDEFINED : static_cast<money32>(value);
-}
-
-constexpr money16 ToMoney16(money64 value)
-{
-    return value == MONEY64_UNDEFINED ? MONEY16_UNDEFINED : static_cast<money16>(value);
-}
-
-using EMPTY_ARGS_VOID_POINTER = void();
-using rct_string_id = uint16_t;
-
-constexpr uint16_t SPRITE_INDEX_NULL = 0xFFFF;
+using StringId = uint16_t;
 
 #define SafeFree(x)                                                                                                            \
     do                                                                                                                         \
