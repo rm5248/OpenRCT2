@@ -1,7 +1,3 @@
-openrct2 (0.4.3-develop-1) unstable; urgency=medium
-
- * Nightly develop build.
- 
 openrct2 (0.4.3) stable; urgency=medium
 * Feature: [#17782] The Flying Coaster now has access to boosters and can draw outside loops.
 * Feature: [#17997] The Log Flume can now draw steep pieces down (if vehicle allows it).
