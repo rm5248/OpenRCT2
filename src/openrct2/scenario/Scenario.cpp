@@ -36,6 +36,7 @@
 #include "../management/Research.h"
 #include "../network/network.h"
 #include "../object/Object.h"
+#include "../object/ObjectEntryManager.h"
 #include "../object/ObjectList.h"
 #include "../object/ObjectManager.h"
 #include "../object/WaterEntry.h"
@@ -335,7 +336,7 @@ static void ScenarioWeekUpdate()
     RideCheckAllReachable();
     RideUpdateFavouritedStat();
 
-    auto water_type = static_cast<WaterObjectEntry*>(ObjectEntryGetChunk(ObjectType::Water, 0));
+    auto water_type = OpenRCT2::ObjectManager::GetObjectEntry<WaterObjectEntry>(0);
 
     if (month <= MONTH_APRIL && water_type != nullptr && water_type->flags & WATER_FLAGS_ALLOW_DUCKS)
     {
@@ -637,8 +638,8 @@ ObjectiveStatus Objective::CheckGuestsBy() const
 ObjectiveStatus Objective::CheckParkValueBy() const
 {
     int32_t currentMonthYear = gDateMonthsElapsed;
-    money32 objectiveParkValue = Currency;
-    money32 parkValue = gParkValue;
+    money64 objectiveParkValue = Currency;
+    money64 parkValue = gParkValue;
 
     if (currentMonthYear == MONTH_COUNT * Year || AllowEarlyCompletion())
     {
@@ -747,7 +748,7 @@ ObjectiveStatus Objective::CheckGuestsAndRating() const
 
 ObjectiveStatus Objective::CheckMonthlyRideIncome() const
 {
-    money32 lastMonthRideIncome = gExpenditureTable[1][static_cast<int32_t>(ExpenditureType::ParkRideTickets)];
+    money64 lastMonthRideIncome = gExpenditureTable[1][static_cast<int32_t>(ExpenditureType::ParkRideTickets)];
     if (lastMonthRideIncome >= Currency)
     {
         return ObjectiveStatus::Success;
@@ -821,8 +822,8 @@ ObjectiveStatus Objective::CheckFinish5RollerCoasters() const
 
 ObjectiveStatus Objective::CheckRepayLoanAndParkValue() const
 {
-    money32 parkValue = gParkValue;
-    money32 currentLoan = gBankLoan;
+    money64 parkValue = gParkValue;
+    money64 currentLoan = gBankLoan;
 
     if (currentLoan <= 0 && parkValue >= Currency)
     {

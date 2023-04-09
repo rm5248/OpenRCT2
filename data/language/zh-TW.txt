@@ -1247,7 +1247,7 @@ STR_1863    :位清潔工人
 STR_1864    :位維修人員
 STR_1865    :位安全警衛
 STR_1866    :位表演人員
-STR_1867    :{BLACK}{COMMA16} {STRINGID}
+STR_1867    :{BLACK}{COMMA32} {STRINGID}
 STR_1868    :不能改變旋轉次數…
 STR_1869    :{WINDOW_COLOUR_2}旋轉次數:
 STR_1870    :完整旋轉次數
@@ -1679,7 +1679,7 @@ STR_2314    :{WINDOW_COLOUR_2}軌道長度: {BLACK}{STRINGID}
 STR_2315    :{WINDOW_COLOUR_2}建造費用: {BLACK}約{CURRENCY}
 STR_2316    :{WINDOW_COLOUR_2}需要空間: {BLACK}{COMMA16} x {COMMA16}格
 STR_2321    :{WINDOW_COLOUR_2}遊樂設施/店鋪數目: {BLACK}{COMMA16}
-STR_2322    :{WINDOW_COLOUR_2}員工數目: {BLACK}{COMMA16}
+STR_2322    :{WINDOW_COLOUR_2}員工數目: {BLACK}{COMMA32}
 STR_2323    :{WINDOW_COLOUR_2}樂園大小: {BLACK}{COMMA32}m²
 STR_2324    :{WINDOW_COLOUR_2}樂園大小: {BLACK}{COMMA32}平方英尺
 STR_2325    :購買土地來擴展樂園
@@ -2656,7 +2656,6 @@ STR_5375    :▲
 STR_5376    :▼
 STR_5404    :名稱已經存在
 STR_5440    :當焦點失去時最小化全螢幕的遊戲
-STR_5441    :以軌道類別分別遊樂設施,{NEWLINE}就像夢幻遊樂園1(RCT1)一樣,{NEWLINE}令到車輔風格可以在建造後更改.
 STR_5442    :固定樂園評價:
 STR_5447    :類別 {STRINGID}
 STR_5448    :遊樂設施/車輛 {STRINGID}

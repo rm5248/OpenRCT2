@@ -1243,7 +1243,7 @@ STR_1863    :Handymand
 STR_1864    :Mekaniker
 STR_1865    :Sikkerhedsvagt
 STR_1866    :Entertainer
-STR_1867    :{BLACK}{COMMA16} {STRINGID}
+STR_1867    :{BLACK}{COMMA32} {STRINGID}
 STR_1868    :Kan ikke ændre antallet af rotationer…
 STR_1869    :{WINDOW_COLOUR_2}Antal rotationer:
 STR_1870    :Komplet antal af rotationer
@@ -1673,7 +1673,7 @@ STR_2314    :{WINDOW_COLOUR_2}Forlystelse længde: {BLACK}{STRINGID}
 STR_2315    :{WINDOW_COLOUR_2}Pris: {BLACK}omkring {CURRENCY}
 STR_2316    :{WINDOW_COLOUR_2}Krævet plads: {BLACK}{COMMA16} x {COMMA16} felter
 STR_2321    :{WINDOW_COLOUR_2}Antal forlystelser/attraktioner: {BLACK}{COMMA16}
-STR_2322    :{WINDOW_COLOUR_2}Personale: {BLACK}{COMMA16}
+STR_2322    :{WINDOW_COLOUR_2}Personale: {BLACK}{COMMA32}
 STR_2323    :{WINDOW_COLOUR_2}Park størrelse: {BLACK}{COMMA32}m²
 STR_2324    :{WINDOW_COLOUR_2}Park størrelse: {BLACK}{COMMA32}sq.ft.
 STR_2325    :Køb land for at udvide parken
@@ -2648,7 +2648,6 @@ STR_5375    :▲
 STR_5376    :▼
 STR_5404    :Navn eksisterer allerede
 STR_5440    :Minimer fuldskærm ved tab af fokus
-STR_5441    :Identificer forlystelser Efter skinne type{NEWLINE}Så køretøjer kan skiftes{NEWLINE}bagefter (RCT1 opførsel)
 STR_5442    :Tving parkvurdering:
 STR_5447    :Type {STRINGID}
 STR_5448    :Forlystelse / Vogn {STRINGID}

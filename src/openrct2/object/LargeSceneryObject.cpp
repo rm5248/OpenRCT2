@@ -81,11 +81,11 @@ void LargeSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     GetImageTable().Read(context, stream);
 
     // Validate properties
-    if (_legacyType.price <= 0)
+    if (_legacyType.price <= 0.00_GBP)
     {
         context->LogError(ObjectError::InvalidProperty, "Price can not be free or negative.");
     }
-    if (_legacyType.removal_price <= 0)
+    if (_legacyType.removal_price <= 0.00_GBP)
     {
         // Make sure you don't make a profit when placing then removing.
         const auto reimbursement = _legacyType.removal_price;
@@ -143,7 +143,7 @@ void LargeSceneryObject::Unload()
     _baseImageId = _legacyType.image = 0;
 }
 
-void LargeSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
+void LargeSceneryObject::DrawPreview(DrawPixelInfo& dpi, int32_t width, int32_t height) const
 {
     auto screenCoords = ScreenCoordsXY{ width / 2, (height / 2) - 39 };
 
@@ -155,7 +155,7 @@ void LargeSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t 
     if (_legacyType.flags & LARGE_SCENERY_FLAG_HAS_TERTIARY_COLOUR)
         image = image.WithTertiary(COLOUR_DARK_BROWN);
 
-    GfxDrawSprite(dpi, image, screenCoords);
+    GfxDrawSprite(&dpi, image, screenCoords);
 }
 
 std::vector<LargeSceneryTile> LargeSceneryObject::ReadTiles(OpenRCT2::IStream* stream)

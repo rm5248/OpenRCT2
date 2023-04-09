@@ -7,10 +7,16 @@
  * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
 
-#pragma once
+#include "ObjectTypes.h"
 
-#include "common.h"
-#include "drawing/ImageImporter.h"
+#include <algorithm>
 
-int32_t CmdLineForSprite(const char** argv, int32_t argc);
-extern OpenRCT2::Drawing::ImageImporter::ImportMode gSpriteMode;
+bool ObjectTypeIsTransient(ObjectType type)
+{
+    return std::find(TransientObjectTypes.begin(), TransientObjectTypes.end(), type) != std::end(TransientObjectTypes);
+}
+
+bool ObjectTypeIsIntransient(ObjectType type)
+{
+    return std::find(IntransientObjectTypes.begin(), IntransientObjectTypes.end(), type) != std::end(IntransientObjectTypes);
+}

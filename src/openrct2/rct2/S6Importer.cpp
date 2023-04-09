@@ -338,7 +338,7 @@ namespace RCT2
             _guestGenerationProbability = _s6.GuestGenerationProbability;
             gTotalRideValueForMoney = _s6.TotalRideValueForMoney;
             gMaxBankLoan = ToMoney64(_s6.MaximumLoan);
-            gGuestInitialCash = _s6.GuestInitialCash;
+            gGuestInitialCash = ToMoney64(_s6.GuestInitialCash);
             gGuestInitialHunger = _s6.GuestInitialHunger;
             gGuestInitialThirst = _s6.GuestInitialThirst;
             gScenarioObjective.Type = _s6.ObjectiveType;
@@ -384,8 +384,8 @@ namespace RCT2
                 }
             }
 
-            gLandPrice = _s6.LandPrice;
-            gConstructionRightsPrice = _s6.ConstructionRightsPrice;
+            gLandPrice = ToMoney64(_s6.LandPrice);
+            gConstructionRightsPrice = ToMoney64(_s6.ConstructionRightsPrice);
             // unk_01358774
             // Pad01358776
             // _s6.CdKey
@@ -506,6 +506,7 @@ namespace RCT2
             park.Name = GetUserString(_s6.ParkName);
 
             FixLandOwnership();
+            FixWater();
             FixAyersRockScenario();
 
             ResearchDetermineFirstOfType();
@@ -641,6 +642,30 @@ namespace RCT2
             }
         }
 
+        void FixWater() const
+        {
+            if (!_isScenario)
+            {
+                return;
+            }
+            if (String::Equals(_s6.ScenarioFilename, "Infernal Views.SC6", true)
+                || String::Equals(_s6.ScenarioFilename, "infernal views.sea", true))
+            {
+                auto surfaceElement = MapGetSurfaceElementAt(TileCoordsXY{ 45, 62 }.ToCoordsXY());
+
+                surfaceElement->SetWaterHeight(96);
+            }
+            else if (
+                String::Equals(_s6.ScenarioFilename, "Six Flags Holland.SC6")
+                || String::Equals(_s6.ScenarioFilename, "six flags holland.sea", true))
+
+            {
+                auto surfaceElement = MapGetSurfaceElementAt(TileCoordsXY{ 126, 73 }.ToCoordsXY());
+
+                surfaceElement->SetWaterHeight(96);
+            }
+        }
+
         void FixAyersRockScenario() const
         {
             if (!_isScenario || !String::Equals(_s6.ScenarioFilename, "Australasia - Ayers Rock.SC6"))
@@ -703,7 +728,7 @@ namespace RCT2
                 if (src->Type != RIDE_TYPE_NULL)
                 {
                     const auto rideId = RideId::FromUnderlying(index);
-                    auto dst = GetOrAllocateRide(rideId);
+                    auto dst = RideAllocateAtIndex(rideId);
                     ImportRide(dst, src, rideId);
                 }
             }
@@ -951,7 +976,7 @@ namespace RCT2
             }
 
             dst->ratings = src->Ratings;
-            dst->value = src->Value;
+            dst->value = ToMoney64(src->Value);
 
             dst->chairlift_bullwheel_rotation = src->ChairliftBullwheelRotation;
 
@@ -980,7 +1005,7 @@ namespace RCT2
             dst->spiral_slide_progress = src->SpiralSlideProgress;
             // Pad177[0x9];
             dst->build_date = static_cast<int32_t>(src->BuildDate);
-            dst->upkeep_cost = src->UpkeepCost;
+            dst->upkeep_cost = ToMoney64(src->UpkeepCost);
             dst->race_winner = EntityId::FromUnderlying(src->RaceWinner);
             // Pad186[0x02];
             dst->music_position = src->MusicPosition;
@@ -1072,7 +1097,10 @@ namespace RCT2
         void ImportRideRatingsCalcData()
         {
             const auto& src = _s6.RideRatingsCalcData;
-            auto& dst = gRideRatingUpdateState;
+            // S6 has only one state, ensure we reset all states before reading the first one.
+            RideRatingResetUpdateStates();
+            auto& rideRatingStates = RideRatingGetUpdateStates();
+            auto& dst = rideRatingStates[0];
             dst = {};
             dst.Proximity = { src.ProximityX, src.ProximityY, src.ProximityZ };
             dst.ProximityStart = { src.ProximityStartX, src.ProximityStartY, src.ProximityStartZ };
@@ -1830,7 +1858,7 @@ namespace RCT2
 
         std::string GetUserString(StringId stringId)
         {
-            const auto originalString = _s6.CustomStrings[(stringId - USER_STRING_START) % 1024];
+            const auto originalString = _s6.CustomStrings[stringId % 1024];
             auto originalStringView = std::string_view(
                 originalString, GetRCT2StringBufferLen(originalString, USER_STRING_MAX_LENGTH));
             auto asUtf8 = RCT2StringToUTF8(originalStringView, RCT2LanguageId::EnglishUK);
@@ -2169,7 +2197,7 @@ namespace RCT2
         ImportEntityCommonProperties(dst, src);
         dst->MoveDelay = src->MoveDelay;
         dst->NumMovements = src->NumMovements;
-        dst->Vertical = src->Vertical;
+        dst->GuestPurchase = src->Vertical;
         dst->Value = src->Value;
         dst->OffsetX = src->OffsetX;
         dst->Wiggle = src->Wiggle;

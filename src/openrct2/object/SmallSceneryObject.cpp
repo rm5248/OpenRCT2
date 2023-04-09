@@ -55,11 +55,11 @@ void SmallSceneryObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     GetImageTable().Read(context, stream);
 
     // Validate properties
-    if (_legacyType.price <= 0)
+    if (_legacyType.price <= 0.00_GBP)
     {
         context->LogError(ObjectError::InvalidProperty, "Price can not be free or negative.");
     }
-    if (_legacyType.removal_price <= 0)
+    if (_legacyType.removal_price <= 0.00_GBP)
     {
         // Make sure you don't make a profit when placing then removing.
         const auto reimbursement = _legacyType.removal_price;
@@ -95,7 +95,7 @@ void SmallSceneryObject::Unload()
     _legacyType.image = 0;
 }
 
-void SmallSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
+void SmallSceneryObject::DrawPreview(DrawPixelInfo& dpi, int32_t width, int32_t height) const
 {
     auto imageId = ImageId(_legacyType.image);
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_PRIMARY_COLOUR))
@@ -119,12 +119,12 @@ void SmallSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t 
         screenCoords.y -= 12;
     }
 
-    GfxDrawSprite(dpi, imageId, screenCoords);
+    GfxDrawSprite(&dpi, imageId, screenCoords);
 
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_HAS_GLASS))
     {
         imageId = ImageId(_legacyType.image + 4).WithTransparency(COLOUR_BORDEAUX_RED);
-        GfxDrawSprite(dpi, imageId, screenCoords);
+        GfxDrawSprite(&dpi, imageId, screenCoords);
     }
 
     if (_legacyType.HasFlag(SMALL_SCENERY_FLAG_ANIMATED_FG))
@@ -134,7 +134,7 @@ void SmallSceneryObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t 
         {
             imageId = imageId.WithSecondary(COLOUR_YELLOW);
         }
-        GfxDrawSprite(dpi, imageId, screenCoords);
+        GfxDrawSprite(&dpi, imageId, screenCoords);
     }
 }
 
@@ -155,14 +155,13 @@ std::vector<uint8_t> SmallSceneryObject::ReadFrameOffsets(OpenRCT2::IStream* str
 void SmallSceneryObject::PerformFixes()
 {
     auto identifier = GetLegacyIdentifier();
-    static const auto& scgWalls = Object::GetScgWallsHeader();
 
     // ToonTowner's base blocks. Put them in the Walls and Roofs group.
     if (identifier == "XXBBCL01" ||
         identifier == "XXBBMD01" ||
         identifier == "ARBASE2 ")
     {
-        SetPrimarySceneryGroup(scgWalls);
+        SetPrimarySceneryGroup(ObjectEntryDescriptor("rct2.scenery_group.scgwalls"));
     }
 
     // ToonTowner's Pirate roofs. Make them show up in the Pirate Theming.
@@ -171,16 +170,10 @@ void SmallSceneryObject::PerformFixes()
         identifier == "TTPRF10 " ||
         identifier == "TTPRF11 ")
     {
-        static const auto& scgPirat = GetScgPiratHeader();
-        SetPrimarySceneryGroup(scgPirat);
+        SetPrimarySceneryGroup(ObjectEntryDescriptor("rct2.scenery_group.scgpirat"));
     }
 }
 // clang-format on
-
-ObjectEntryDescriptor SmallSceneryObject::GetScgPiratHeader() const
-{
-    return ObjectEntryDescriptor("rct2.scenery_group.scgpirat");
-}
 
 void SmallSceneryObject::ReadJson(IReadObjectContext* context, json_t& root)
 {

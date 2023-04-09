@@ -103,7 +103,7 @@ struct TrackDesign
 {
     uint8_t type;
     uint8_t vehicle_type;
-    money32 cost;
+    money64 cost;
     uint32_t flags;
     RideMode ride_mode;
     uint8_t track_flags;
@@ -130,7 +130,7 @@ struct TrackDesign
     uint8_t excitement;
     uint8_t intensity;
     uint8_t nausea;
-    money16 upkeep_cost;
+    money64 upkeep_cost;
     uint8_t track_spine_colour[RCT12::Limits::NumColourSchemes];
     uint8_t track_rail_colour[RCT12::Limits::NumColourSchemes];
     uint8_t track_support_colour[RCT12::Limits::NumColourSchemes];
@@ -210,8 +210,6 @@ enum
     MAZE_ELEMENT_TYPE_ENTRANCE = (1 << 3),
     MAZE_ELEMENT_TYPE_EXIT = (1 << 7)
 };
-
-static constexpr RideId PreviewRideId = RideId::FromUnderlying(0);
 
 extern bool gTrackDesignSceneryToggle;
 

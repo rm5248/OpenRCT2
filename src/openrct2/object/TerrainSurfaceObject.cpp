@@ -50,7 +50,7 @@ void TerrainSurfaceObject::Unload()
     NumEntries = 0;
 }
 
-void TerrainSurfaceObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
+void TerrainSurfaceObject::DrawPreview(DrawPixelInfo& dpi, int32_t width, int32_t height) const
 {
     auto imageId = ImageId(GetImageId({}, 1, 0, 0, false, false));
     if (Colour != 255)
@@ -70,7 +70,7 @@ void TerrainSurfaceObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_
         }
         for (int32_t j = 0; j < 4; j++)
         {
-            GfxDrawSprite(dpi, imageId, screenCoords);
+            GfxDrawSprite(&dpi, imageId, screenCoords);
             screenCoords.x += 64;
         }
         screenCoords.y += 16;
@@ -87,7 +87,7 @@ void TerrainSurfaceObject::ReadJson(IReadObjectContext* context, json_t& root)
     {
         Colour = Colour::FromString(Json::GetString(properties["colour"]), 255);
         Rotations = Json::GetNumber<int8_t>(properties["rotations"], 1);
-        Price = Json::GetNumber<money32>(properties["price"]);
+        Price = Json::GetNumber<money64>(properties["price"]);
         Flags = Json::GetFlags<TERRAIN_SURFACE_FLAGS>(
             properties,
             { { "smoothWithSelf", TERRAIN_SURFACE_FLAGS::SMOOTH_WITH_SELF },

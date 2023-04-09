@@ -286,7 +286,7 @@ public:
     virtual void Load() abstract;
     virtual void Unload() abstract;
 
-    virtual void DrawPreview(DrawPixelInfo* /*dpi*/, int32_t /*width*/, int32_t /*height*/) const
+    virtual void DrawPreview(DrawPixelInfo& /*dpi*/, int32_t /*width*/, int32_t /*height*/) const
     {
     }
 
@@ -315,7 +315,6 @@ public:
         return _imageTable;
     }
 
-    ObjectEntryDescriptor GetScgWallsHeader() const;
     ObjectEntryDescriptor GetScgPathXHeader() const;
     RCTObjectEntry CreateHeader(const char name[9], uint32_t flags, uint32_t checksum);
 

@@ -49,7 +49,6 @@
 #include "../windows/Intent.h"
 #include "../world/Climate.h"
 #include "../world/Footpath.h"
-#include "../world/LargeScenery.h"
 #include "../world/Location.hpp"
 #include "../world/Map.h"
 #include "../world/Park.h"
@@ -1467,9 +1466,9 @@ void Guest::CheckCantFindExit()
  *
  *  rct2: 0x0069AF1E
  */
-bool Guest::DecideAndBuyItem(Ride& ride, ShopItem shopItem, money32 price)
+bool Guest::DecideAndBuyItem(Ride& ride, ShopItem shopItem, money64 price)
 {
-    money32 itemValue;
+    money64 itemValue;
 
     bool hasVoucher = false;
 
@@ -1565,7 +1564,7 @@ bool Guest::DecideAndBuyItem(Ride& ride, ShopItem shopItem, money32 price)
                     if (Happiness >= 180)
                         itemValue /= 2;
                 }
-                if (itemValue > (static_cast<money16>(ScenarioRand() & 0x07)))
+                if (itemValue > (static_cast<money64>(ScenarioRand() & 0x07)))
                 {
                     // "I'm not paying that much for x"
                     InsertNewThought(GetShopItemDescriptor(shopItem).TooMuchThought, ride.id);
@@ -1576,11 +1575,11 @@ bool Guest::DecideAndBuyItem(Ride& ride, ShopItem shopItem, money32 price)
         else
         {
             itemValue -= price;
-            itemValue = std::max(8, itemValue);
+            itemValue = std::max(0.80_GBP, itemValue);
 
             if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
             {
-                if (itemValue >= static_cast<money32>(ScenarioRand() & 0x07))
+                if (itemValue >= static_cast<money64>(ScenarioRand() & 0x07))
                 {
                     // "This x is a really good value"
                     InsertNewThought(GetShopItemDescriptor(shopItem).GoodValueThought, ride.id);
@@ -1671,7 +1670,7 @@ bool Guest::DecideAndBuyItem(Ride& ride, ShopItem shopItem, money32 price)
     if (GetShopItemDescriptor(shopItem).IsSouvenir())
         AmountOfSouvenirs++;
 
-    money16* expend_type = &PaidOnSouvenirs;
+    money64* expend_type = &PaidOnSouvenirs;
     ExpenditureType expenditure = ExpenditureType::ShopStock;
 
     if (GetShopItemDescriptor(shopItem).IsFood())
@@ -1986,7 +1985,7 @@ bool Guest::ShouldGoOnRide(Ride& ride, StationIndex entranceNum, bool atQueue, b
 
         // Assuming the queue conditions are met, peeps will always go on free transport rides.
         // Ride ratings, recent crashes and weather will all be ignored.
-        money16 ridePrice = RideGetPrice(ride);
+        auto ridePrice = RideGetPrice(ride);
         if (!ride.GetRideTypeDescriptor().HasFlag(RIDE_TYPE_FLAG_TRANSPORT_RIDE) || ride.value == RIDE_VALUE_UNDEFINED
             || ridePrice != 0)
         {
@@ -2142,10 +2141,10 @@ bool Guest::ShouldGoOnRide(Ride& ride, StationIndex entranceNum, bool atQueue, b
                 }
             }
 
-            uint32_t value = ride.value;
+            money64 value = ride.value;
 
             // If the value of the ride hasn't yet been calculated, peeps will be willing to pay any amount for the ride.
-            if (value != 0xFFFF && !PeepHasVoucherForFreeRide(this, ride) && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+            if (value != RIDE_VALUE_UNDEFINED && !PeepHasVoucherForFreeRide(this, ride) && !(gParkFlags & PARK_FLAGS_NO_MONEY))
             {
                 // The amount peeps are willing to pay is decreased by 75% if they had to pay to enter the park.
                 if (PeepFlags & PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY)
@@ -2153,7 +2152,7 @@ bool Guest::ShouldGoOnRide(Ride& ride, StationIndex entranceNum, bool atQueue, b
 
                 // Peeps won't pay more than twice the value of the ride.
                 ridePrice = RideGetPrice(ride);
-                if (ridePrice > static_cast<money16>(value * 2))
+                if (ridePrice > (value * 2))
                 {
                     if (peepAtRide)
                     {
@@ -2169,7 +2168,7 @@ bool Guest::ShouldGoOnRide(Ride& ride, StationIndex entranceNum, bool atQueue, b
                 }
 
                 // A ride is good value if the price is 50% or less of the ride value and the peep didn't pay to enter the park.
-                if (ridePrice <= static_cast<money16>(value / 2) && peepAtRide)
+                if (ridePrice <= (value / 2) && peepAtRide)
                 {
                     if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
                     {
@@ -2277,9 +2276,9 @@ bool Guest::ShouldGoToShop(Ride& ride, bool peepAtShop)
 }
 
 // Used when no logging to an expend type required
-void Guest::SpendMoney(money32 amount, ExpenditureType expenditure)
+void Guest::SpendMoney(money64 amount, ExpenditureType expenditure)
 {
-    money16 unused;
+    money64 unused;
     SpendMoney(unused, amount, expenditure);
 }
 
@@ -2288,28 +2287,20 @@ void Guest::SpendMoney(money32 amount, ExpenditureType expenditure)
  *  rct2: 0x0069926C
  * Expend type was previously an offset saved in 0x00F1AEC0
  */
-void Guest::SpendMoney(money16& peep_expend_type, money32 amount, ExpenditureType expenditure)
+void Guest::SpendMoney(money64& peep_expend_type, money64 amount, ExpenditureType expenditure)
 {
     assert(!(gParkFlags & PARK_FLAGS_NO_MONEY));
 
-    CashInPocket = std::max(0, CashInPocket - amount);
+    CashInPocket = std::max(0.00_GBP, static_cast<money64>(CashInPocket) - amount);
     CashSpent += amount;
 
-    peep_expend_type += static_cast<money16>(amount);
+    peep_expend_type += amount;
 
     WindowInvalidateByNumber(WindowClass::Peep, Id);
 
     FinancePayment(-amount, expenditure);
 
-    if (gConfigGeneral.ShowGuestPurchases && !(gScreenFlags & SCREEN_FLAGS_TITLE_DEMO))
-    {
-        // HACK Currently disabled for multiplayer due to limitation of all sprites
-        //      needing to be synchronised
-        if (NetworkGetMode() == NETWORK_MODE_NONE && !gOpenRCT2Headless)
-        {
-            MoneyEffect::CreateAt(amount, GetLocation(), true);
-        }
-    }
+    MoneyEffect::CreateAt(amount, GetLocation(), true);
 
     OpenRCT2::Audio::Play3D(OpenRCT2::Audio::SoundId::Purchase, GetLocation());
 }
@@ -2607,7 +2598,7 @@ static void PeepUpdateRideAtEntranceTryLeave(Guest* peep)
     }
 }
 
-static bool PeepCheckRidePriceAtEntrance(Guest* peep, const Ride& ride, money32 ridePrice)
+static bool PeepCheckRidePriceAtEntrance(Guest* peep, const Ride& ride, money64 ridePrice)
 {
     if ((peep->HasItem(ShopItem::Voucher)) && peep->VoucherType == VOUCHER_TYPE_RIDE_FREE
         && peep->VoucherRideId == peep->CurrentRide)
@@ -2633,10 +2624,10 @@ static bool PeepCheckRidePriceAtEntrance(Guest* peep, const Ride& ride, money32 
         return false;
     }
 
-    uint16_t value = ride.value;
+    auto value = ride.value;
     if (value != RIDE_VALUE_UNDEFINED)
     {
-        if (value * 2 < ridePrice)
+        if ((value * 2) < ridePrice)
         {
             peep->InsertNewThought(PeepThoughtType::BadValue, peep->CurrentRide);
             PeepUpdateRideAtEntranceTryLeave(peep);
@@ -2717,7 +2708,7 @@ static int16_t PeepCalculateRideValueSatisfaction(Guest* peep, const Ride& ride)
         return -30;
     }
 
-    money16 ridePrice = RideGetPrice(ride);
+    auto ridePrice = RideGetPrice(ride);
     if (ride.value >= ridePrice)
     {
         return -5;
@@ -3393,7 +3384,7 @@ void Guest::UpdateBuying()
             }
             if (ride_type->shop_item[1] != ShopItem::None)
             {
-                money16 price = ride->price[1];
+                auto price = ride->price[1];
 
                 item_bought = DecideAndBuyItem(*ride, ride_type->shop_item[1], price);
                 if (item_bought)
@@ -3404,7 +3395,7 @@ void Guest::UpdateBuying()
 
             if (!item_bought && ride_type->shop_item[0] != ShopItem::None)
             {
-                money16 price = ride->price[0];
+                auto price = ride->price[0];
 
                 item_bought = DecideAndBuyItem(*ride, ride_type->shop_item[0], price);
                 if (item_bought)
@@ -3488,7 +3479,7 @@ void Guest::UpdateRideAtEntrance()
     if (ride->lifecycle_flags & RIDE_LIFECYCLE_BROKEN_DOWN)
         return;
 
-    money16 ridePrice = RideGetPrice(*ride);
+    auto ridePrice = RideGetPrice(*ride);
     if (ridePrice != 0)
     {
         if (!PeepCheckRidePriceAtEntrance(this, *ride, ridePrice))
@@ -3606,7 +3597,10 @@ uint8_t Guest::GetWaypointedSeatLocation(const Ride& ride, const CarEntry* vehic
 void Guest::UpdateRideLeaveEntranceWaypoints(const Ride& ride)
 {
     const auto& station = ride.GetStation(CurrentRideStation);
-    Guard::Assert(!station.Entrance.IsNull());
+    if (station.Entrance.IsNull())
+    {
+        return;
+    }
     uint8_t direction_entrance = station.Entrance.direction;
 
     TileElement* tile_element = RideGetStationStartTrackElement(ride, CurrentRideStation);
@@ -3627,10 +3621,13 @@ void Guest::UpdateRideLeaveEntranceWaypoints(const Ride& ride)
     const auto& rtd = ride.GetRideTypeDescriptor();
     CoordsXY waypoint = rtd.GetGuestWaypointLocation(*vehicle, ride, CurrentRideStation);
 
-    const auto waypointIndex = Var37 / 4;
-    Guard::Assert(carEntry->peep_loading_waypoints.size() >= static_cast<size_t>(waypointIndex));
-    waypoint.x += carEntry->peep_loading_waypoints[waypointIndex][0].x;
-    waypoint.y += carEntry->peep_loading_waypoints[waypointIndex][0].y;
+    const auto waypointIndex = Var37 / 4U;
+    if (waypointIndex < carEntry->peep_loading_waypoints.size())
+    {
+        Guard::Assert(carEntry->peep_loading_waypoints.size() >= static_cast<size_t>(waypointIndex));
+        waypoint.x += carEntry->peep_loading_waypoints[waypointIndex][0].x;
+        waypoint.y += carEntry->peep_loading_waypoints[waypointIndex][0].y;
+    }
 
     SetDestination(waypoint);
     RideSubState = PeepRideSubState::ApproachVehicleWaypoints;
@@ -3690,7 +3687,10 @@ void Guest::UpdateRideAdvanceThroughEntrance()
     {
         const auto& station = ride->GetStation(CurrentRideStation);
         auto entranceLocation = station.Entrance.ToCoordsXYZD();
-        Guard::Assert(!entranceLocation.IsNull());
+        if (entranceLocation.IsNull())
+        {
+            return;
+        }
 
         const auto& rtd = GetRideTypeDescriptor(ride->type);
         rtd.UpdateLeaveEntrance(this, *ride, entranceLocation);
@@ -3776,7 +3776,6 @@ static void PeepGoToRideExit(Peep* peep, const Ride& ride, int16_t x, int16_t y,
 
     Guard::Assert(peep->CurrentRideStation.ToUnderlying() < OpenRCT2::Limits::MaxStationsPerRide);
     auto exit = ride.GetStation(peep->CurrentRideStation).Exit;
-    Guard::Assert(!exit.IsNull());
     x = exit.x;
     y = exit.y;
     x *= 32;
@@ -3784,8 +3783,16 @@ static void PeepGoToRideExit(Peep* peep, const Ride& ride, int16_t x, int16_t y,
     x += 16;
     y += 16;
 
-    int16_t x_shift = DirectionOffsets[exit_direction].x;
-    int16_t y_shift = DirectionOffsets[exit_direction].y;
+    auto [x_shift, y_shift] = [exit_direction]() {
+        if (exit_direction < DirectionOffsets.size())
+        {
+            return std::pair(DirectionOffsets[exit_direction].x, DirectionOffsets[exit_direction].y);
+        }
+        else
+        {
+            return std::pair(0, 0);
+        }
+    }();
 
     int16_t shift_multiplier = 20;
 
@@ -3817,7 +3824,7 @@ static void PeepGoToRideExit(Peep* peep, const Ride& ride, int16_t x, int16_t y,
  */
 void Guest::UpdateRideFreeVehicleEnterRide(Ride& ride)
 {
-    money16 ridePrice = RideGetPrice(ride);
+    auto ridePrice = RideGetPrice(ride);
     if (ridePrice != 0)
     {
         if ((HasItem(ShopItem::Voucher)) && (VoucherType == VOUCHER_TYPE_RIDE_FREE) && (VoucherRideId == CurrentRide))
@@ -3827,7 +3834,7 @@ void Guest::UpdateRideFreeVehicleEnterRide(Ride& ride)
         }
         else
         {
-            ride.total_profit += ridePrice;
+            ride.total_profit = AddClamp_money64(ride.total_profit, ridePrice);
             ride.window_invalidate_flags |= RIDE_INVALIDATE_RIDE_INCOME;
             SpendMoney(PaidOnRides, ridePrice, ExpenditureType::ParkRideTickets);
         }
@@ -3883,8 +3890,11 @@ static void PeepUpdateRideNoFreeVehicleRejoinQueue(Guest* peep, Ride& ride)
 
     int32_t x = entranceLocation.x * 32;
     int32_t y = entranceLocation.y * 32;
-    x += 16 - DirectionOffsets[entranceLocation.direction].x * 20;
-    y += 16 - DirectionOffsets[entranceLocation.direction].y * 20;
+    if (entranceLocation.direction < DirectionOffsets.size())
+    {
+        x += 16 - DirectionOffsets[entranceLocation.direction].x * 20;
+        y += 16 - DirectionOffsets[entranceLocation.direction].y * 20;
+    }
 
     peep->SetDestination({ x, y }, 2);
     peep->SetState(PeepState::QueuingFront);
@@ -4194,8 +4204,16 @@ void Guest::UpdateRideLeaveVehicle()
                 }
             }
 
-            int16_t xShift = DirectionOffsets[specialDirection].x;
-            int16_t yShift = DirectionOffsets[specialDirection].y;
+            auto [xShift, yShift] = [specialDirection]() {
+                if (specialDirection < DirectionOffsets.size())
+                {
+                    return std::pair(DirectionOffsets[specialDirection].x, DirectionOffsets[specialDirection].y);
+                }
+                else
+                {
+                    return std::pair(0, 0);
+                }
+            }();
 
             platformLocation.x = vehicle->x + xShift * shiftMultiplier;
             platformLocation.y = vehicle->y + yShift * shiftMultiplier;
@@ -4243,7 +4261,10 @@ void Guest::UpdateRideLeaveVehicle()
     }
 
     auto exitLocation = station.Exit.ToCoordsXYZD();
-    Guard::Assert(!exitLocation.IsNull());
+    if (exitLocation.IsNull())
+    {
+        return;
+    }
 
     TileElement* trackElement = RideGetStationStartTrackElement(*ride, CurrentRideStation);
 
@@ -4266,19 +4287,26 @@ void Guest::UpdateRideLeaveVehicle()
         return;
 
     Var37 = ((exitLocation.direction | GetWaypointedSeatLocation(*ride, carEntry, station_direction) * 4) * 4) | 1;
-    Guard::Assert(carEntry->peep_loading_waypoints.size() >= static_cast<size_t>(Var37 / 4));
+
     CoordsXYZ exitWaypointLoc = waypointLoc;
 
-    exitWaypointLoc.x += carEntry->peep_loading_waypoints[Var37 / 4][2].x;
-    exitWaypointLoc.y += carEntry->peep_loading_waypoints[Var37 / 4][2].y;
+    const auto waypointIndex = Var37 / 4U;
+    if (waypointIndex < carEntry->peep_loading_waypoints.size())
+    {
+        exitWaypointLoc.x += carEntry->peep_loading_waypoints[waypointIndex][2].x;
+        exitWaypointLoc.y += carEntry->peep_loading_waypoints[waypointIndex][2].y;
+    }
 
     if (ride->type == RIDE_TYPE_MOTION_SIMULATOR)
         exitWaypointLoc.z += 15;
 
     MoveTo(exitWaypointLoc);
 
-    waypointLoc.x += carEntry->peep_loading_waypoints[Var37 / 4][1].x;
-    waypointLoc.y += carEntry->peep_loading_waypoints[Var37 / 4][1].y;
+    if (waypointIndex < carEntry->peep_loading_waypoints.size())
+    {
+        waypointLoc.x += carEntry->peep_loading_waypoints[waypointIndex][1].x;
+        waypointLoc.y += carEntry->peep_loading_waypoints[waypointIndex][1].y;
+    }
 
     SetDestination(waypointLoc, 2);
     RideSubState = PeepRideSubState::ApproachExitWaypoints;
@@ -4296,8 +4324,17 @@ void Guest::UpdateRidePrepareForExit()
 
     auto exit = ride->GetStation(CurrentRideStation).Exit;
     auto newDestination = exit.ToCoordsXY().ToTileCentre();
-    auto xShift = DirectionOffsets[exit.direction].x;
-    auto yShift = DirectionOffsets[exit.direction].y;
+
+    auto [xShift, yShift] = [exit]() {
+        if (exit.direction < DirectionOffsets.size())
+        {
+            return std::pair(DirectionOffsets[exit.direction].x, DirectionOffsets[exit.direction].y);
+        }
+        else
+        {
+            return std::pair(0, 0);
+        }
+    }();
 
     int16_t shiftMultiplier = 20;
 
@@ -4430,9 +4467,13 @@ void Guest::UpdateRideApproachVehicleWaypoints()
     }
 
     const auto& vehicle_type = rideEntry->Cars[vehicle->vehicle_type];
-    Guard::Assert(waypoint < 3);
-    targetLoc.x += vehicle_type.peep_loading_waypoints[Var37 / 4][waypoint].x;
-    targetLoc.y += vehicle_type.peep_loading_waypoints[Var37 / 4][waypoint].y;
+    const auto waypointIndex = Var37 / 4U;
+    if (waypointIndex < vehicle_type.peep_loading_waypoints.size())
+    {
+        Guard::Assert(waypoint < 3);
+        targetLoc.x += vehicle_type.peep_loading_waypoints[waypointIndex][waypoint].x;
+        targetLoc.y += vehicle_type.peep_loading_waypoints[waypointIndex][waypoint].y;
+    }
 
     SetDestination(targetLoc);
 }
@@ -4613,7 +4654,12 @@ void Guest::UpdateRideApproachSpiralSlide()
         {
             auto exit = ride->GetStation(CurrentRideStation).Exit;
             waypoint = 1;
-            Var37 = (exit.direction * 4) | (Var37 & 0x30) | waypoint;
+            auto directionTemp = exit.direction;
+            if (exit.direction == INVALID_DIRECTION)
+            {
+                directionTemp = 0;
+            }
+            Var37 = (directionTemp * 4) | (Var37 & 0x30) | waypoint;
             CoordsXY targetLoc = ride->GetStation(CurrentRideStation).Start;
 
             assert(rtd.HasFlag(RIDE_TYPE_FLAG_IS_SPIRAL_SLIDE));
@@ -7117,11 +7163,11 @@ Guest* Guest::Generate(const CoordsXYZ& coords)
     peep->PeepId = gNextGuestNumber++;
     peep->Name = nullptr;
 
-    money32 cash = (ScenarioRand() & 0x3) * 100 - 100 + gGuestInitialCash;
+    money64 cash = (static_cast<money64>(ScenarioRand() & 0x3) * 100) - 100 + gGuestInitialCash;
     if (cash < 0)
         cash = 0;
 
-    if (gGuestInitialCash == 0)
+    if (gGuestInitialCash == 0.00_GBP)
     {
         cash = 500;
     }
@@ -7131,7 +7177,7 @@ Guest* Guest::Generate(const CoordsXYZ& coords)
         cash = 0;
     }
 
-    if (gGuestInitialCash == MONEY16_UNDEFINED)
+    if (gGuestInitialCash == MONEY64_UNDEFINED)
     {
         cash = 0;
     }

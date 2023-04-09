@@ -84,7 +84,7 @@ public:
         WindowPushOthersRight(*this);
         ShowGridlines();
         _miniPreview.resize(TRACK_MINI_PREVIEW_SIZE);
-        _placementCost = MONEY32_UNDEFINED;
+        _placementCost = MONEY64_UNDEFINED;
         _placementLoc.SetNull();
         _currentTrackPieceDirection = (2 - GetCurrentRotation()) & 3;
     }
@@ -163,11 +163,11 @@ public:
         if (mapCoords == _placementLoc)
         {
             TrackDesignPreviewDrawOutlines(
-                tds, _trackDesign.get(), *GetOrAllocateRide(PreviewRideId), { mapCoords, 0, _currentTrackPieceDirection });
+                tds, _trackDesign.get(), RideGetTemporaryForPreview(), { mapCoords, 0, _currentTrackPieceDirection });
             return;
         }
 
-        money32 cost = MONEY32_UNDEFINED;
+        money64 cost = MONEY64_UNDEFINED;
 
         // Get base Z position
         mapZ = GetBaseZ(mapCoords);
@@ -192,7 +192,7 @@ public:
                     }
                 });
                 res = GameActions::Execute(&tdAction);
-                cost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY32_UNDEFINED;
+                cost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY64_UNDEFINED;
             }
         }
 
@@ -203,7 +203,7 @@ public:
             WidgetInvalidate(*this, WIDX_PRICE);
         }
 
-        TrackDesignPreviewDrawOutlines(tds, _trackDesign.get(), *GetOrAllocateRide(PreviewRideId), trackLoc);
+        TrackDesignPreviewDrawOutlines(tds, _trackDesign.get(), RideGetTemporaryForPreview(), trackLoc);
     }
 
     void OnToolDown(WidgetIndex widgetIndex, const ScreenCoordsXY& screenCoords) override
@@ -304,11 +304,11 @@ public:
         }
 
         // Price
-        if (_placementCost != MONEY32_UNDEFINED && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+        if (_placementCost != MONEY64_UNDEFINED && !(gParkFlags & PARK_FLAGS_NO_MONEY))
         {
             ft = Formatter();
             ft.Add<money64>(_placementCost);
-            DrawTextBasic(&dpi, this->windowPos + ScreenCoordsXY{ 88, 94 }, STR_COST_LABEL, ft, { TextAlignment::CENTRE });
+            DrawTextBasic(dpi, this->windowPos + ScreenCoordsXY{ 88, 94 }, STR_COST_LABEL, ft, { TextAlignment::CENTRE });
         }
     }
 
@@ -383,7 +383,7 @@ private:
     CoordsXY _placementLoc;
     RideId _placementGhostRideId;
     bool _hasPlacementGhost;
-    money32 _placementCost;
+    money64 _placementCost;
     CoordsXYZD _placementGhostLoc;
 
     std::vector<uint8_t> _miniPreview;
@@ -425,7 +425,7 @@ private:
 
         return z
             + TrackDesignGetZPlacement(
-                   _trackDesign.get(), *GetOrAllocateRide(PreviewRideId), { loc, z, _currentTrackPieceDirection });
+                   _trackDesign.get(), RideGetTemporaryForPreview(), { loc, z, _currentTrackPieceDirection });
     }
 
     void DrawMiniPreviewTrack(TrackDesign* td6, int32_t pass, const CoordsXY& origin, CoordsXY min, CoordsXY max)

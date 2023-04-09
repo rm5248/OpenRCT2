@@ -1243,7 +1243,7 @@ STR_1863    :dozorca
 STR_1864    :mechanik
 STR_1865    :strażnik
 STR_1866    :komik
-STR_1867    :{BLACK}{COMMA16} {STRINGID}
+STR_1867    :{BLACK}{COMMA32} {STRINGID}
 STR_1868    :Nie można zmienić liczby obrotów…
 STR_1869    :{WINDOW_COLOUR_2}Liczba obrotów:
 STR_1870    :Liczba pełnych obrotów
@@ -1673,7 +1673,7 @@ STR_2314    :{WINDOW_COLOUR_2}Długość trasy: {BLACK}{STRINGID}
 STR_2315    :{WINDOW_COLOUR_2}Koszt: {BLACK}około {CURRENCY}
 STR_2316    :{WINDOW_COLOUR_2}Zajmowany teren: {BLACK}{COMMA16} × {COMMA16} pól
 STR_2321    :{WINDOW_COLOUR_2}Liczba atrakcji: {BLACK}{COMMA16}
-STR_2322    :{WINDOW_COLOUR_2}Liczba pracowników: {BLACK}{COMMA16}
+STR_2322    :{WINDOW_COLOUR_2}Liczba pracowników: {BLACK}{COMMA32}
 STR_2323    :{WINDOW_COLOUR_2}Rozmiar parku: {BLACK}{COMMA32}m²
 STR_2324    :{WINDOW_COLOUR_2}Rozmiar parku: {BLACK}{COMMA32} stóp kw.
 STR_2325    :Kup ziemię by powiększyć park
@@ -2648,7 +2648,6 @@ STR_5375    :▲
 STR_5376    :▼
 STR_5404    :Nazwa już istnieje
 STR_5440    :Zmniejsz utratę ostrości przy pełnym ekranie
-STR_5441    :Identyfikuj rodzaj przejażdżki po trasie{NEWLINE}dzięki czemu mogą zostać zmienione wagoniki{NEWLINE} (zaszłość z RCT1)
 STR_5442    :Wymuś ocenę parku:
 STR_5447    :Typ {STRINGID}
 STR_5448    :Atrakcja {STRINGID}

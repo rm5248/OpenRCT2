@@ -14,32 +14,25 @@
 #include "../localisation/Localisation.h"
 #include "Drawing.h"
 
-static void DrawText(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const TextPaint& paint, const_utf8string text, bool noFormatting = false);
-static void DrawText(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const TextPaint& paint, StringId format, const void* args);
-
 class StaticLayout
 {
 private:
-    utf8string Buffer;
+    u8string Buffer;
     TextPaint Paint;
     int32_t LineCount = 0;
     int32_t LineHeight;
     int32_t MaxWidth;
 
 public:
-    StaticLayout(utf8string source, const TextPaint& paint, int32_t width)
+    StaticLayout(u8string_view source, const TextPaint& paint, int32_t width)
+        : Paint(paint)
     {
-        Buffer = source;
-        Paint = paint;
-
-        MaxWidth = GfxWrapString(Buffer, width, paint.FontStyle, &LineCount);
+        MaxWidth = GfxWrapString(source, width, paint.FontStyle, &Buffer, &LineCount);
         LineCount += 1;
         LineHeight = FontGetLineHeight(paint.FontStyle);
     }
 
-    void Draw(DrawPixelInfo* dpi, const ScreenCoordsXY& coords)
+    void Draw(DrawPixelInfo& dpi, const ScreenCoordsXY& coords)
     {
         TextPaint tempPaint = Paint;
 
@@ -55,7 +48,7 @@ public:
                 lineCoords.x += MaxWidth;
                 break;
         }
-        utf8* buffer = Buffer;
+        const utf8* buffer = Buffer.data();
         for (int32_t line = 0; line < LineCount; ++line)
         {
             DrawText(dpi, lineCoords, tempPaint, buffer);
@@ -81,8 +74,8 @@ public:
     }
 };
 
-static void DrawText(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const TextPaint& paint, const_utf8string text, bool noFormatting)
+void DrawText(
+    DrawPixelInfo& dpi, const ScreenCoordsXY& coords, const TextPaint& paint, const_utf8string text, bool noFormatting)
 {
     int32_t width = noFormatting ? GfxGetStringWidthNoFormatting(text, paint.FontStyle)
                                  : GfxGetStringWidth(text, paint.FontStyle);
@@ -105,38 +98,32 @@ static void DrawText(
     if (paint.UnderlineText == TextUnderline::On)
     {
         GfxFillRect(
-            dpi, { { alignedCoords + ScreenCoordsXY{ 0, 11 } }, { alignedCoords + ScreenCoordsXY{ width, 11 } } },
+            &dpi, { { alignedCoords + ScreenCoordsXY{ 0, 11 } }, { alignedCoords + ScreenCoordsXY{ width, 11 } } },
             gTextPalette[1]);
         if (gTextPalette[2] != 0)
         {
             GfxFillRect(
-                dpi, { { alignedCoords + ScreenCoordsXY{ 1, 12 } }, { alignedCoords + ScreenCoordsXY{ width + 1, 12 } } },
+                &dpi, { { alignedCoords + ScreenCoordsXY{ 1, 12 } }, { alignedCoords + ScreenCoordsXY{ width + 1, 12 } } },
                 gTextPalette[2]);
         }
     }
 }
 
-static void DrawText(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const TextPaint& paint, StringId format, const void* args)
-{
-    utf8 buffer[512];
-    OpenRCT2::FormatStringLegacy(buffer, sizeof(buffer), format, args);
-    DrawText(dpi, coords, paint, buffer);
-}
-
-void DrawTextBasic(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, StringId format)
+void DrawTextBasic(DrawPixelInfo& dpi, const ScreenCoordsXY& coords, StringId format)
 {
     Formatter ft{};
     TextPaint textPaint{};
     DrawTextBasic(dpi, coords, format, ft, textPaint);
 }
 
-void DrawTextBasic(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, StringId format, const Formatter& ft, TextPaint textPaint)
+void DrawTextBasic(DrawPixelInfo& dpi, const ScreenCoordsXY& coords, StringId format, const Formatter& ft, TextPaint textPaint)
 {
-    DrawText(dpi, coords, textPaint, format, ft.Data());
+    utf8 buffer[512];
+    OpenRCT2::FormatStringLegacy(buffer, sizeof(buffer), format, ft.Data());
+    DrawText(dpi, coords, textPaint, buffer);
 }
 
-void DrawTextEllipsised(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_t width, StringId format)
+void DrawTextEllipsised(DrawPixelInfo& dpi, const ScreenCoordsXY& coords, int32_t width, StringId format)
 {
     Formatter ft{};
     TextPaint textPaint{};
@@ -144,7 +131,7 @@ void DrawTextEllipsised(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_
 }
 
 void DrawTextEllipsised(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_t width, StringId format, const Formatter& ft, TextPaint textPaint)
+    DrawPixelInfo& dpi, const ScreenCoordsXY& coords, int32_t width, StringId format, const Formatter& ft, TextPaint textPaint)
 {
     utf8 buffer[512];
     OpenRCT2::FormatStringLegacy(buffer, sizeof(buffer), format, ft.Data());
@@ -153,17 +140,12 @@ void DrawTextEllipsised(
     DrawText(dpi, coords, textPaint, buffer);
 }
 
-void GfxDrawString(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const_utf8string buffer, TextPaint textPaint)
+void GfxDrawString(DrawPixelInfo& dpi, const ScreenCoordsXY& coords, const_utf8string buffer, TextPaint textPaint)
 {
     DrawText(dpi, coords, textPaint, buffer);
 }
 
-void GfxDrawStringNoFormatting(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, const_utf8string buffer, TextPaint textPaint)
-{
-    DrawText(dpi, coords, textPaint, buffer, true);
-}
-
-int32_t DrawTextWrapped(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_t width, StringId format)
+int32_t DrawTextWrapped(DrawPixelInfo& dpi, const ScreenCoordsXY& coords, int32_t width, StringId format)
 {
     Formatter ft{};
     TextPaint textPaint{};
@@ -171,13 +153,11 @@ int32_t DrawTextWrapped(DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_
 }
 
 int32_t DrawTextWrapped(
-    DrawPixelInfo* dpi, const ScreenCoordsXY& coords, int32_t width, StringId format, const Formatter& ft, TextPaint textPaint)
+    DrawPixelInfo& dpi, const ScreenCoordsXY& coords, int32_t width, StringId format, const Formatter& ft, TextPaint textPaint)
 {
     const void* args = ft.Data();
 
-    // TODO: Refactor StaticLayout to take a std::string_view instead. It shouldn't have to write to the buffer.
-    const std::string buffer = FormatStringID(format, args);
-    StaticLayout layout(const_cast<char*>(buffer.c_str()), textPaint, width);
+    StaticLayout layout(FormatStringID(format, args), textPaint, width);
 
     if (textPaint.Alignment == TextAlignment::CENTRE)
     {

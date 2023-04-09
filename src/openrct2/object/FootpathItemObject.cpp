@@ -27,7 +27,7 @@ void FootpathItemObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     _legacyType.flags = stream->ReadValue<uint16_t>();
     _legacyType.draw_type = static_cast<PathBitDrawType>(stream->ReadValue<uint8_t>());
     _legacyType.tool_id = static_cast<CursorID>(stream->ReadValue<uint8_t>());
-    _legacyType.price = stream->ReadValue<int16_t>();
+    _legacyType.price = stream->ReadValue<money16>();
     _legacyType.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
     stream->Seek(2, OpenRCT2::STREAM_SEEK_CURRENT);
 
@@ -39,7 +39,7 @@ void FootpathItemObject::ReadLegacy(IReadObjectContext* context, OpenRCT2::IStre
     GetImageTable().Read(context, stream);
 
     // Validate properties
-    if (_legacyType.price <= 0)
+    if (_legacyType.price <= 0.00_GBP)
     {
         context->LogError(ObjectError::InvalidProperty, "Price can not be free or negative.");
     }
@@ -80,10 +80,10 @@ void FootpathItemObject::Unload()
     _legacyType.image = 0;
 }
 
-void FootpathItemObject::DrawPreview(DrawPixelInfo* dpi, int32_t width, int32_t height) const
+void FootpathItemObject::DrawPreview(DrawPixelInfo& dpi, int32_t width, int32_t height) const
 {
     auto screenCoords = ScreenCoordsXY{ width / 2, height / 2 };
-    GfxDrawSprite(dpi, ImageId(_legacyType.image), screenCoords - ScreenCoordsXY{ 22, 24 });
+    GfxDrawSprite(&dpi, ImageId(_legacyType.image), screenCoords - ScreenCoordsXY{ 22, 24 });
 }
 
 static PathBitDrawType ParseDrawType(const std::string& s)
@@ -109,7 +109,7 @@ void FootpathItemObject::ReadJson(IReadObjectContext* context, json_t& root)
     {
         _legacyType.draw_type = ParseDrawType(Json::GetString(properties["renderAs"]));
         _legacyType.tool_id = Cursor::FromString(Json::GetString(properties["cursor"]), CursorID::LamppostDown);
-        _legacyType.price = Json::GetNumber<int16_t>(properties["price"]);
+        _legacyType.price = Json::GetNumber<money64>(properties["price"]);
 
         SetPrimarySceneryGroup(ObjectEntryDescriptor(Json::GetString(properties["sceneryGroup"])));
 

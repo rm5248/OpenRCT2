@@ -36,11 +36,13 @@ enum
 
 struct PathBitEntry
 {
+    static constexpr auto kObjectType = ObjectType::PathBits;
+
     StringId name;
     uint32_t image;
     uint16_t flags;
     PathBitDrawType draw_type;
     CursorID tool_id;
-    money16 price;
+    money64 price;
     ObjectEntryIndex scenery_tab_id;
 };

@@ -95,7 +95,13 @@ private:
         StringId ActionHire;
     };
 
-    std::vector<EntityId> _staffList;
+    struct StaffEntry
+    {
+        EntityId Id;
+        u8string Name;
+    };
+
+    std::vector<StaffEntry> _staffList;
     bool _quickFireMode{};
     std::optional<size_t> _highlightedIndex{};
     int32_t _selectedTab{};
@@ -285,13 +291,13 @@ public:
         {
             auto ft = Formatter();
             ft.Add<money64>(GetStaffWage(GetSelectedStaffType()));
-            DrawTextBasic(&dpi, windowPos + ScreenCoordsXY{ width - 155, 32 }, STR_COST_PER_MONTH, ft);
+            DrawTextBasic(dpi, windowPos + ScreenCoordsXY{ width - 155, 32 }, STR_COST_PER_MONTH, ft);
         }
 
         if (GetSelectedStaffType() != StaffType::Entertainer)
         {
             DrawTextBasic(
-                &dpi, windowPos + ScreenCoordsXY{ 6, widgets[WIDX_STAFF_LIST_UNIFORM_COLOUR_PICKER].top + 1 },
+                dpi, windowPos + ScreenCoordsXY{ 6, widgets[WIDX_STAFF_LIST_UNIFORM_COLOUR_PICKER].top + 1 },
                 STR_UNIFORM_COLOUR);
         }
 
@@ -299,11 +305,11 @@ public:
         auto staffTypeStringId = _staffList.size() == 1 ? namingConvention.Singular : namingConvention.Plural;
 
         auto ft = Formatter();
-        ft.Add<uint16_t>(_staffList.size());
+        ft.Add<uint32_t>(_staffList.size());
         ft.Add<StringId>(staffTypeStringId);
 
         DrawTextBasic(
-            &dpi, windowPos + ScreenCoordsXY{ 4, widgets[WIDX_STAFF_LIST_LIST].bottom + 2 }, STR_STAFF_LIST_COUNTER, ft);
+            dpi, windowPos + ScreenCoordsXY{ 4, widgets[WIDX_STAFF_LIST_LIST].bottom + 2 }, STR_STAFF_LIST_COUNTER, ft);
     }
 
     ScreenSize OnScrollGetSize(int32_t scrollIndex) override
@@ -314,7 +320,7 @@ public:
             Invalidate();
         }
 
-        auto scrollHeight = static_cast<int16_t>(_staffList.size()) * SCROLLABLE_ROW_HEIGHT;
+        auto scrollHeight = static_cast<int32_t>(_staffList.size()) * SCROLLABLE_ROW_HEIGHT;
         auto i = scrollHeight - widgets[WIDX_STAFF_LIST_LIST].bottom + widgets[WIDX_STAFF_LIST_LIST].top + 21;
         if (i < 0)
             i = 0;
@@ -341,18 +347,18 @@ public:
     void OnScrollMouseDown(int32_t scrollIndex, const ScreenCoordsXY& screenCoords) override
     {
         int32_t i = screenCoords.y / SCROLLABLE_ROW_HEIGHT;
-        for (auto spriteIndex : _staffList)
+        for (const auto& entry : _staffList)
         {
             if (i == 0)
             {
                 if (_quickFireMode)
                 {
-                    auto staffFireAction = StaffFireAction(spriteIndex);
+                    auto staffFireAction = StaffFireAction(entry.Id);
                     GameActions::Execute(&staffFireAction);
                 }
                 else
                 {
-                    auto peep = GetEntity<Staff>(spriteIndex);
+                    auto peep = GetEntity<Staff>(entry.Id);
                     if (peep != nullptr)
                     {
                         auto intent = Intent(WindowClass::Peep);
@@ -381,7 +387,7 @@ public:
 
         auto y = 0;
         size_t i = 0;
-        for (auto spriteIndex : _staffList)
+        for (const auto& entry : _staffList)
         {
             if (y > dpi.y + dpi.height)
             {
@@ -390,7 +396,7 @@ public:
 
             if (y + 11 >= dpi.y)
             {
-                auto peep = GetEntity<Staff>(spriteIndex);
+                const auto* peep = GetEntity<Staff>(entry.Id);
                 if (peep == nullptr)
                 {
                     continue;
@@ -405,11 +411,11 @@ public:
 
                 auto ft = Formatter();
                 peep->FormatNameTo(ft);
-                DrawTextEllipsised(&dpi, { 0, y }, nameColumnSize, format, ft);
+                DrawTextEllipsised(dpi, { 0, y }, nameColumnSize, format, ft);
 
                 ft = Formatter();
                 peep->FormatActionTo(ft);
-                DrawTextEllipsised(&dpi, { actionOffset, y }, actionColumnSize, format, ft);
+                DrawTextEllipsised(dpi, { actionOffset, y }, actionColumnSize, format, ft);
 
                 // True if a patrol path is set for the worker
                 if (peep->HasPatrolArea())
@@ -481,17 +487,24 @@ public:
     {
         _staffList.clear();
 
-        for (auto peep : EntityList<Staff>())
+        for (auto* peep : EntityList<Staff>())
         {
             EntitySetFlashing(peep, false);
             if (peep->AssignedStaffType == GetSelectedStaffType())
             {
                 EntitySetFlashing(peep, true);
-                _staffList.push_back(peep->Id);
+
+                StaffEntry entry;
+                entry.Id = peep->Id;
+                entry.Name = peep->GetName();
+
+                _staffList.push_back(std::move(entry));
             }
         }
 
-        std::sort(_staffList.begin(), _staffList.end(), [](const auto a, const auto b) { return PeepCompare(a, b) < 0; });
+        std::sort(_staffList.begin(), _staffList.end(), [](const auto& a, const auto& b) {
+            return StrLogicalCmp(a.Name.c_str(), b.Name.c_str()) < 0;
+        });
     }
 
 private:
@@ -528,6 +541,8 @@ private:
 
             auto actionResult = res->GetData<StaffHireNewActionResult>();
             auto* staff = GetEntity<Staff>(actionResult.StaffEntityId);
+            if (staff == nullptr)
+                return;
 
             // If autoposition of staff is disabled, pickup peep and then open the staff window
             if (staff->State == PeepState::Picked)
@@ -537,12 +552,13 @@ private:
                 nullLoc.SetNull();
 
                 PeepPickupAction pickupAction{ PeepPickupType::Pickup, staff->Id, nullLoc, NetworkGetCurrentPlayerId() };
-                pickupAction.SetCallback([&staff](const GameAction* ga, const GameActions::Result* result) {
+                pickupAction.SetCallback([staffId = staff->Id](const GameAction* ga, const GameActions::Result* result) {
                     if (result->Error != GameActions::Status::Ok)
                         return;
 
+                    auto* staff2 = GetEntity<Staff>(staffId);
                     auto intent = Intent(WindowClass::Peep);
-                    intent.PutExtra(INTENT_EXTRA_PEEP, staff);
+                    intent.PutExtra(INTENT_EXTRA_PEEP, staff2);
                     auto* wind = ContextOpenIntent(&intent);
                     if (wind != nullptr)
                     {

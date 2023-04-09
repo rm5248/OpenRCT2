@@ -464,7 +464,8 @@ namespace OpenRCT2
 
         void ReadWriteGeneralChunk(OrcaStream& os)
         {
-            auto found = os.ReadWriteChunk(ParkFileChunkType::GENERAL, [this, &os](OrcaStream::ChunkStream& cs) {
+            const auto version = os.GetHeader().TargetVersion;
+            auto found = os.ReadWriteChunk(ParkFileChunkType::GENERAL, [this, &os, &version](OrcaStream::ChunkStream& cs) {
                 // Only GAME_PAUSED_NORMAL from gGamePaused is relevant.
                 if (cs.GetMode() == OrcaStream::Mode::READING)
                 {
@@ -497,7 +498,16 @@ namespace OpenRCT2
                 }
 
                 cs.ReadWrite(gGuestInitialHappiness);
-                cs.ReadWrite(gGuestInitialCash);
+                if (version <= 18)
+                {
+                    money16 tempGuestInitialCash{};
+                    cs.ReadWrite(tempGuestInitialCash);
+                    gGuestInitialCash = ToMoney64(tempGuestInitialCash);
+                }
+                else
+                {
+                    cs.ReadWrite(gGuestInitialCash);
+                }
                 cs.ReadWrite(gGuestInitialHunger);
                 cs.ReadWrite(gGuestInitialThirst);
 
@@ -509,12 +519,42 @@ namespace OpenRCT2
                     cs.ReadWrite(spawn.direction);
                 });
 
-                cs.ReadWrite(gLandPrice);
-                cs.ReadWrite(gConstructionRightsPrice);
+                if (version <= 18)
+                {
+                    money16 tempLandPrice{};
+                    money16 tempConstructionRightPrice{};
+                    cs.ReadWrite(tempLandPrice);
+                    cs.ReadWrite(tempConstructionRightPrice);
+                    gLandPrice = ToMoney64(tempLandPrice);
+                    gConstructionRightsPrice = ToMoney64(tempConstructionRightPrice);
+                }
+                else
+                {
+                    cs.ReadWrite(gLandPrice);
+                    cs.ReadWrite(gConstructionRightsPrice);
+                }
                 cs.ReadWrite(gGrassSceneryTileLoopPosition);
                 cs.ReadWrite(gWidePathTileLoopPosition);
 
-                ReadWriteRideRatingCalculationData(cs, gRideRatingUpdateState);
+                auto& rideRatings = RideRatingGetUpdateStates();
+                if (os.GetHeader().TargetVersion >= 21)
+                {
+                    cs.ReadWriteArray(rideRatings, [this, &cs](RideRatingUpdateState& calcData) {
+                        ReadWriteRideRatingCalculationData(cs, calcData);
+                        return true;
+                    });
+                }
+                else
+                {
+                    // Only single state was stored prior to version 20.
+                    if (os.GetMode() == OrcaStream::Mode::READING)
+                    {
+                        // Since we read only one state ensure the rest is reset.
+                        RideRatingResetUpdateStates();
+                    }
+                    auto& rideRatingUpdateState = rideRatings[0];
+                    ReadWriteRideRatingCalculationData(cs, rideRatingUpdateState);
+                }
 
                 if (os.GetHeader().TargetVersion >= 14)
                 {
@@ -748,7 +788,17 @@ namespace OpenRCT2
                 cs.ReadWrite(gMaxBankLoan);
                 cs.ReadWrite(gBankLoanInterestRate);
                 cs.ReadWrite(gParkFlags);
-                cs.ReadWrite(gParkEntranceFee);
+                if (version <= 18)
+                {
+                    money16 tempParkEntranceFee{};
+                    cs.ReadWrite(tempParkEntranceFee);
+                    gParkEntranceFee = ToMoney64(tempParkEntranceFee);
+                }
+                else
+                {
+                    cs.ReadWrite(gParkEntranceFee);
+                }
+
                 cs.ReadWrite(gStaffHandymanColour);
                 cs.ReadWrite(gStaffMechanicColour);
                 cs.ReadWrite(gStaffSecurityColour);
@@ -795,7 +845,7 @@ namespace OpenRCT2
                 // Awards
                 if (version <= 6)
                 {
-                    Award awards[RCT2::Limits::MaxAwards];
+                    Award awards[RCT2::Limits::MaxAwards]{};
                     cs.ReadWriteArray(awards, [&cs](Award& award) {
                         if (award.Time != 0)
                         {
@@ -1193,7 +1243,12 @@ namespace OpenRCT2
                     // Ride ID
                     cs.ReadWrite(rideId);
 
-                    auto& ride = *GetOrAllocateRide(rideId);
+                    auto& ride = [&]() -> Ride& {
+                        if (cs.GetMode() == OrcaStream::Mode::WRITING)
+                            return *GetRide(rideId);
+                        else
+                            return *RideAllocateAtIndex(rideId);
+                    }();
 
                     // Status
                     cs.ReadWrite(ride.type);
@@ -1207,10 +1262,23 @@ namespace OpenRCT2
                     cs.ReadWrite(ride.custom_name);
                     cs.ReadWrite(ride.default_name_number);
 
-                    cs.ReadWriteArray(ride.price, [&cs](money16& price) {
-                        cs.ReadWrite(price);
-                        return true;
-                    });
+                    if (version <= 18)
+                    {
+                        money16 prices[2] = {};
+                        cs.ReadWriteArray(prices, [&cs](money16& price) {
+                            cs.ReadWrite(price);
+                            return true;
+                        });
+                        ride.price[0] = prices[0];
+                        ride.price[1] = prices[1];
+                    }
+                    else
+                    {
+                        cs.ReadWriteArray(ride.price, [&cs](money64& price) {
+                            cs.ReadWrite(price);
+                            return true;
+                        });
+                    }
 
                     // Colours
                     cs.ReadWrite(ride.entrance_style);
@@ -1357,11 +1425,50 @@ namespace OpenRCT2
                     cs.ReadWrite(ride.intensity);
                     cs.ReadWrite(ride.nausea);
 
-                    cs.ReadWrite(ride.value);
+                    if (version <= 18)
+                    {
+                        uint16_t tempRideValue{};
+                        cs.ReadWrite(tempRideValue);
+                        if (tempRideValue == 0xFFFFU)
+                        {
+                            ride.value = RIDE_VALUE_UNDEFINED;
+                        }
+                        else
+                        {
+                            ride.value = ToMoney64(tempRideValue);
+                        }
+                    }
+                    else if (version == 19)
+                    {
+                        money64 tempRideValue{};
+                        cs.ReadWrite(tempRideValue);
+                        if (tempRideValue == 0xFFFFU)
+                        {
+                            ride.value = RIDE_VALUE_UNDEFINED;
+                        }
+                        else
+                        {
+                            ride.value = tempRideValue;
+                        }
+                    }
+                    else
+                    {
+                        cs.ReadWrite(ride.value);
+                    }
 
                     cs.ReadWrite(ride.num_riders);
                     cs.ReadWrite(ride.build_date);
-                    cs.ReadWrite(ride.upkeep_cost);
+
+                    if (version <= 18)
+                    {
+                        money16 tempUpkeepCost{};
+                        cs.ReadWrite(tempUpkeepCost);
+                        ride.upkeep_cost = ToMoney64(tempUpkeepCost);
+                    }
+                    else
+                    {
+                        cs.ReadWrite(ride.upkeep_cost);
+                    }
 
                     cs.ReadWrite(ride.cur_num_customers);
                     cs.ReadWrite(ride.num_customers_timeout);
@@ -1605,7 +1712,9 @@ namespace OpenRCT2
             {
                 if (guest != nullptr)
                 {
-                    cs.ReadWrite(guest->PaidOnDrink);
+                    money16 tempPaidOnDrink{};
+                    cs.ReadWrite(tempPaidOnDrink);
+                    guest->PaidOnDrink = ToMoney64(tempPaidOnDrink);
                     std::array<uint8_t, 16> rideTypeBeenOn;
                     cs.ReadWriteArray(rideTypeBeenOn, [&cs](uint8_t& rideType) {
                         cs.ReadWrite(rideType);
@@ -1690,8 +1799,13 @@ namespace OpenRCT2
             {
                 if (guest != nullptr)
                 {
-                    cs.ReadWrite(guest->CashInPocket);
-                    cs.ReadWrite(guest->CashSpent);
+                    money32 tempCashInPocket{};
+                    money32 tempCashSpent{};
+                    cs.ReadWrite(tempCashInPocket);
+                    cs.ReadWrite(tempCashSpent);
+                    guest->CashInPocket = ToMoney64(tempCashInPocket);
+                    guest->CashSpent = ToMoney64(tempCashSpent);
+
                     cs.ReadWrite(guest->ParkEntryTime);
                     cs.ReadWrite(guest->RejoinQueueTimeout);
                     cs.ReadWrite(guest->PreviousRide);
@@ -1774,10 +1888,17 @@ namespace OpenRCT2
                     cs.ReadWrite(guest->LitterCount);
                     cs.ReadWrite(guest->GuestTimeOnRide);
                     cs.ReadWrite(guest->DisgustingCount);
-                    cs.ReadWrite(guest->PaidToEnter);
-                    cs.ReadWrite(guest->PaidOnRides);
-                    cs.ReadWrite(guest->PaidOnFood);
-                    cs.ReadWrite(guest->PaidOnSouvenirs);
+
+                    money16 expenditures[4]{};
+                    cs.ReadWrite(expenditures[0]);
+                    cs.ReadWrite(expenditures[1]);
+                    cs.ReadWrite(expenditures[2]);
+                    cs.ReadWrite(expenditures[3]);
+                    guest->PaidToEnter = ToMoney64(expenditures[0]);
+                    guest->PaidOnRides = ToMoney64(expenditures[1]);
+                    guest->PaidOnFood = ToMoney64(expenditures[2]);
+                    guest->PaidOnSouvenirs = ToMoney64(expenditures[3]);
+
                     cs.ReadWrite(guest->AmountOfFood);
                     cs.ReadWrite(guest->AmountOfDrinks);
                     cs.ReadWrite(guest->AmountOfSouvenirs);
@@ -1963,8 +2084,9 @@ namespace OpenRCT2
     template<> void ParkFile::ReadWriteEntity(OrcaStream& os, OrcaStream::ChunkStream& cs, Guest& guest)
     {
         ReadWritePeep(os, cs, guest);
+        auto version = os.GetHeader().TargetVersion;
 
-        if (os.GetHeader().TargetVersion <= 1)
+        if (version <= 1)
         {
             return;
         }
@@ -1975,11 +2097,30 @@ namespace OpenRCT2
         cs.ReadWrite(guest.GuestHeadingToRideId);
         cs.ReadWrite(guest.GuestIsLostCountdown);
         cs.ReadWrite(guest.GuestTimeOnRide);
-        cs.ReadWrite(guest.PaidToEnter);
-        cs.ReadWrite(guest.PaidOnRides);
-        cs.ReadWrite(guest.PaidOnFood);
-        cs.ReadWrite(guest.PaidOnDrink);
-        cs.ReadWrite(guest.PaidOnSouvenirs);
+
+        if (version <= 18)
+        {
+            money16 expenditures[5]{};
+            cs.ReadWrite(expenditures[0]);
+            cs.ReadWrite(expenditures[1]);
+            cs.ReadWrite(expenditures[2]);
+            cs.ReadWrite(expenditures[3]);
+            cs.ReadWrite(expenditures[4]);
+            guest.PaidToEnter = ToMoney64(expenditures[0]);
+            guest.PaidOnRides = ToMoney64(expenditures[1]);
+            guest.PaidOnFood = ToMoney64(expenditures[2]);
+            guest.PaidOnDrink = ToMoney64(expenditures[3]);
+            guest.PaidOnSouvenirs = ToMoney64(expenditures[4]);
+        }
+        else
+        {
+            cs.ReadWrite(guest.PaidToEnter);
+            cs.ReadWrite(guest.PaidOnRides);
+            cs.ReadWrite(guest.PaidOnFood);
+            cs.ReadWrite(guest.PaidOnDrink);
+            cs.ReadWrite(guest.PaidOnSouvenirs);
+        }
+
         cs.ReadWrite(guest.OutsideOfPark);
         cs.ReadWrite(guest.Happiness);
         cs.ReadWrite(guest.HappinessTarget);
@@ -2054,8 +2195,21 @@ namespace OpenRCT2
                 }
             }
         }
-        cs.ReadWrite(guest.CashInPocket);
-        cs.ReadWrite(guest.CashSpent);
+        if (version <= 18)
+        {
+            money32 tempCashInPocket{};
+            money32 tempCashSpent{};
+            cs.ReadWrite(tempCashInPocket);
+            cs.ReadWrite(tempCashSpent);
+            guest.CashInPocket = ToMoney64(tempCashInPocket);
+            guest.CashSpent = ToMoney64(tempCashSpent);
+        }
+        else
+        {
+            cs.ReadWrite(guest.CashInPocket);
+            cs.ReadWrite(guest.CashSpent);
+        }
+
         cs.ReadWrite(guest.Photo1RideRef);
         cs.ReadWrite(guest.Photo2RideRef);
         cs.ReadWrite(guest.Photo3RideRef);
@@ -2157,7 +2311,7 @@ namespace OpenRCT2
         ReadWriteEntityCommon(cs, moneyEffect);
         cs.ReadWrite(moneyEffect.MoveDelay);
         cs.ReadWrite(moneyEffect.NumMovements);
-        cs.ReadWrite(moneyEffect.Vertical);
+        cs.ReadWrite(moneyEffect.GuestPurchase);
         cs.ReadWrite(moneyEffect.Value);
         cs.ReadWrite(moneyEffect.OffsetX);
         cs.ReadWrite(moneyEffect.Wiggle);

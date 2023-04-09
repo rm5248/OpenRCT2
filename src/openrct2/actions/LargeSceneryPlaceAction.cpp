@@ -12,12 +12,12 @@
 #include "../OpenRCT2.h"
 #include "../management/Finance.h"
 #include "../object/LargeSceneryEntry.h"
+#include "../object/ObjectEntryManager.h"
 #include "../object/ObjectLimits.h"
 #include "../ride/Ride.h"
 #include "../ride/RideConstruction.h"
 #include "../world/Banner.h"
 #include "../world/ConstructionClearance.h"
-#include "../world/LargeScenery.h"
 #include "../world/MapAnimation.h"
 #include "../world/Surface.h"
 
@@ -65,7 +65,7 @@ GameActions::Result LargeSceneryPlaceAction::Query() const
 
     auto resultData = LargeSceneryPlaceActionResult{};
 
-    money32 supportsCost = 0;
+    money64 supportsCost = 0;
 
     if (_primaryColour >= COLOUR_COUNT || _secondaryColour >= COLOUR_COUNT || _tertiaryColour >= COLOUR_COUNT)
     {
@@ -81,7 +81,7 @@ GameActions::Result LargeSceneryPlaceAction::Query() const
         return GameActions::Result(GameActions::Status::InvalidParameters, STR_CANT_POSITION_THIS_HERE, STR_NONE);
     }
 
-    auto* sceneryEntry = GetLargeSceneryEntry(_sceneryType);
+    auto* sceneryEntry = OpenRCT2::ObjectManager::GetObjectEntry<LargeSceneryEntry>(_sceneryType);
     if (sceneryEntry == nullptr)
     {
         LOG_ERROR("Invalid game command for scenery placement, sceneryType = %u", _sceneryType);
@@ -191,9 +191,9 @@ GameActions::Result LargeSceneryPlaceAction::Execute() const
 
     auto resultData = LargeSceneryPlaceActionResult{};
 
-    money32 supportsCost = 0;
+    money64 supportsCost = 0;
 
-    auto* sceneryEntry = GetLargeSceneryEntry(_sceneryType);
+    auto* sceneryEntry = OpenRCT2::ObjectManager::GetObjectEntry<LargeSceneryEntry>(_sceneryType);
     if (sceneryEntry == nullptr)
     {
         LOG_ERROR("Invalid game command for scenery placement, sceneryType = %u", _sceneryType);

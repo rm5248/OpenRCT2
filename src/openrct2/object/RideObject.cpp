@@ -43,6 +43,56 @@ static const uint8_t SpriteGroupMultiplier[EnumValue(SpriteGroupType::Count)] = 
     1, 2, 2, 2, 2, 2, 2, 10, 1, 2, 2, 2, 2, 2, 2, 2, 6, 4, 4, 4, 4, 4, 4, 4, 12, 4, 4, 4, 4, 4, 20, 3, 1,
 };
 
+constexpr const uint8_t DefaultSteamSpawnPosition[] = { 11, 22 };
+
+static const EnumMap<CarEntryAnimation> AnimationNameLookup{
+    { "none", CarEntryAnimation::None },
+    { "simpleVehicle", CarEntryAnimation::SimpleVehicle },
+    { "steamLocomotive", CarEntryAnimation::SteamLocomotive },
+    { "swanBoat", CarEntryAnimation::SwanBoat },
+    { "monorailCycle", CarEntryAnimation::MonorailCycle },
+    { "MultiDimension", CarEntryAnimation::MultiDimension },
+    { "observationTower", CarEntryAnimation::ObservationTower },
+    { "animalFlying", CarEntryAnimation::AnimalFlying },
+};
+
+constexpr const auto NumLegacyAnimationTypes = 11;
+
+struct LegacyAnimationParameters
+{
+    uint16_t Speed;
+    uint8_t NumFrames;
+    CarEntryAnimation Alias;
+};
+
+constexpr const LegacyAnimationParameters VehicleEntryDefaultAnimation[] = {
+    { 0, 1, CarEntryAnimation::None },                  // None
+    { 1 << 12, 4, CarEntryAnimation::SteamLocomotive }, // Miniature Railway Locomotive
+    { 1 << 10, 2, CarEntryAnimation::SwanBoat },        // Swan Boat
+    { 1 << 11, 6, CarEntryAnimation::SimpleVehicle },   // Canoe
+    { 1 << 11, 7, CarEntryAnimation::SimpleVehicle },   // Rowboat
+    { 1 << 10, 2, CarEntryAnimation::SimpleVehicle },   // Water Tricycle
+    { 0x3333, 8, CarEntryAnimation::ObservationTower }, // Observation Tower
+    { 1 << 10, 4, CarEntryAnimation::SimpleVehicle },   // Mini Helicopter
+    { 1 << 11, 4, CarEntryAnimation::MonorailCycle },   // Monorail Cycle
+    { 0x3333, 8, CarEntryAnimation::MultiDimension },   // Multi Dimension Coaster
+    { 24, 4, CarEntryAnimation::AnimalFlying },         // Animal Flying
+};
+static_assert(std::size(VehicleEntryDefaultAnimation) == NumLegacyAnimationTypes);
+
+static CarEntryAnimation GetAnimationTypeFromString(const std::string& s)
+{
+    auto result = AnimationNameLookup.find(s);
+    return (result != AnimationNameLookup.end()) ? result->second : CarEntryAnimation::None;
+}
+
+static LegacyAnimationParameters GetDefaultAnimationParameters(uint8_t legacyAnimationType)
+{
+    if (legacyAnimationType >= NumLegacyAnimationTypes)
+        return VehicleEntryDefaultAnimation[0];
+    return VehicleEntryDefaultAnimation[legacyAnimationType];
+}
+
 static constexpr SpritePrecision PrecisionFromNumFrames(uint8_t numRotationFrames)
 {
     if (numRotationFrames == 0)
@@ -196,6 +246,7 @@ void RideObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
         context->LogError(ObjectError::InvalidProperty, "Nausea multiplier too high.");
     }
     RideObjectUpdateRideType(_legacyType);
+    _legacyType.Clearance = GetDefaultClearance();
 }
 
 void RideObject::Load()
@@ -239,7 +290,7 @@ void RideObject::Load()
 
             carEntry.NumCarImages = imageIndex - currentCarImagesOffset;
 
-            // Move the offset over this car’s images. Including peeps
+            // Move the offset over this car's images. Including peeps
             currentCarImagesOffset = imageIndex + carEntry.no_seating_rows * carEntry.NumCarImages;
             // 0x6DEB0D
 
@@ -283,7 +334,7 @@ void RideObject::Unload()
     _legacyType.images_offset = 0;
 }
 
-void RideObject::DrawPreview(DrawPixelInfo* dpi, [[maybe_unused]] int32_t width, [[maybe_unused]] int32_t height) const
+void RideObject::DrawPreview(DrawPixelInfo& dpi, [[maybe_unused]] int32_t width, [[maybe_unused]] int32_t height) const
 {
     uint32_t imageId = _legacyType.images_offset;
 
@@ -295,7 +346,7 @@ void RideObject::DrawPreview(DrawPixelInfo* dpi, [[maybe_unused]] int32_t width,
         imageId++;
     }
 
-    GfxDrawSprite(dpi, ImageId(imageId), { 0, 0 });
+    GfxDrawSprite(&dpi, ImageId(imageId), { 0, 0 });
 }
 
 std::string RideObject::GetDescription() const
@@ -349,7 +400,7 @@ void RideObject::ReadLegacyCar([[maybe_unused]] IReadObjectContext* context, ISt
     car->sprite_width = stream->ReadValue<uint8_t>();
     car->sprite_height_negative = stream->ReadValue<uint8_t>();
     car->sprite_height_positive = stream->ReadValue<uint8_t>();
-    car->animation = stream->ReadValue<uint8_t>();
+    auto legacyAnimation = stream->ReadValue<uint8_t>();
     car->flags = stream->ReadValue<uint32_t>();
     car->base_num_frames = stream->ReadValue<uint16_t>();
     stream->Seek(15 * 4, STREAM_SEEK_CURRENT);
@@ -367,6 +418,14 @@ void RideObject::ReadLegacyCar([[maybe_unused]] IReadObjectContext* context, ISt
     car->draw_order = stream->ReadValue<uint8_t>();
     car->num_vertical_frames_override = stream->ReadValue<uint8_t>();
     stream->Seek(4, STREAM_SEEK_CURRENT);
+
+    // OpenRCT2-specific features below
+    auto animationProperties = GetDefaultAnimationParameters(legacyAnimation);
+    car->animation = animationProperties.Alias;
+    car->AnimationSpeed = animationProperties.Speed;
+    car->AnimationFrames = animationProperties.NumFrames;
+    car->SteamEffect.Longitudinal = DefaultSteamSpawnPosition[0];
+    car->SteamEffect.Vertical = DefaultSteamSpawnPosition[1];
     ReadLegacySpriteGroups(car, spriteGroups);
 }
 
@@ -382,8 +441,8 @@ uint8_t RideObject::CalculateNumVerticalFrames(const CarEntry& carEntry)
     {
         if (!(carEntry.flags & CAR_ENTRY_FLAG_SPINNING_ADDITIONAL_FRAMES))
         {
-            if (carEntry.flags & CAR_ENTRY_FLAG_VEHICLE_ANIMATION
-                && carEntry.animation != CAR_ENTRY_ANIMATION_OBSERVATION_TOWER)
+            if ((carEntry.flags & CAR_ENTRY_FLAG_VEHICLE_ANIMATION)
+                && carEntry.animation != CarEntryAnimation::ObservationTower)
             {
                 if (!(carEntry.flags & CAR_ENTRY_FLAG_DODGEM_INUSE_LIGHTS))
                 {
@@ -471,6 +530,7 @@ void RideObject::ReadJson(IReadObjectContext* context, json_t& root)
         }
 
         _legacyType.max_height = Json::GetNumber<uint8_t>(properties["maxHeight"]);
+        _legacyType.Clearance = Json::GetNumber<uint8_t>(properties["clearance"], GetDefaultClearance());
 
         // This needs to be set for both shops/facilities _and_ regular rides.
         for (auto& item : _legacyType.shop_item)
@@ -645,7 +705,6 @@ CarEntry RideObject::ReadJsonCar([[maybe_unused]] IReadObjectContext* context, j
     car.sprite_width = Json::GetNumber<uint8_t>(jCar["spriteWidth"]);
     car.sprite_height_negative = Json::GetNumber<uint8_t>(jCar["spriteHeightNegative"]);
     car.sprite_height_positive = Json::GetNumber<uint8_t>(jCar["spriteHeightPositive"]);
-    car.animation = Json::GetNumber<uint8_t>(jCar["animation"]);
     car.base_num_frames = Json::GetNumber<uint16_t>(jCar["baseNumFrames"]);
     car.NumCarImages = Json::GetNumber<uint32_t>(jCar["numImages"]);
     car.no_seating_rows = Json::GetNumber<uint8_t>(jCar["numSeatRows"]);
@@ -661,6 +720,38 @@ CarEntry RideObject::ReadJsonCar([[maybe_unused]] IReadObjectContext* context, j
     car.effect_visual = Json::GetNumber<uint8_t>(jCar["effectVisual"], 1);
     car.draw_order = Json::GetNumber<uint8_t>(jCar["drawOrder"]);
     car.num_vertical_frames_override = Json::GetNumber<uint8_t>(jCar["numVerticalFramesOverride"]);
+
+    auto jAnimation = jCar["animation"];
+    if (jAnimation.is_object())
+    {
+        car.animation = GetAnimationTypeFromString(Json::GetString(jAnimation["animationType"]));
+        car.AnimationSpeed = Json::GetNumber<uint16_t>(jAnimation["animationSpeed"]);
+        car.AnimationFrames = Json::GetNumber<uint16_t>(jAnimation["animationFrames"]);
+    }
+    else
+    {
+        auto animationProperties = GetDefaultAnimationParameters(Json::GetNumber<uint8_t>(jAnimation));
+        car.animation = animationProperties.Alias;
+        car.AnimationSpeed = animationProperties.Speed;
+        car.AnimationFrames = animationProperties.NumFrames;
+
+        if (!jCar["animationSpeed"].is_null())
+            car.AnimationSpeed = Json::GetNumber<uint16_t>(jCar["animationSpeed"]);
+        if (!jCar["animationFrames"].is_null())
+            car.AnimationFrames = Json::GetNumber<uint16_t>(jCar["animationFrames"]);
+    }
+
+    auto jSteamTranslation = jCar["steamPosition"];
+    if (jSteamTranslation.is_object())
+    {
+        car.SteamEffect.Longitudinal = Json::GetNumber<int8_t>(jSteamTranslation["longitudinal"], DefaultSteamSpawnPosition[0]);
+        car.SteamEffect.Vertical = Json::GetNumber<int8_t>(jSteamTranslation["vertical"], DefaultSteamSpawnPosition[1]);
+    }
+    else
+    {
+        car.SteamEffect.Longitudinal = DefaultSteamSpawnPosition[0];
+        car.SteamEffect.Vertical = DefaultSteamSpawnPosition[1];
+    }
 
     auto jLoadingPositions = jCar["loadingPositions"];
     if (jLoadingPositions.is_array())
@@ -1015,4 +1106,11 @@ void RideObject::ReadLegacySpriteGroups(CarEntry* vehicle, uint16_t spriteGroups
     {
         vehicle->SpriteGroups[EnumValue(SpriteGroupType::CurvedLiftHill)].spritePrecision = baseSpritePrecision;
     }
+}
+
+uint8_t RideObject::GetDefaultClearance() const
+{
+    auto rideType = _legacyType.GetFirstNonNullRideType();
+    const auto& rtd = GetRideTypeDescriptor(rideType);
+    return rtd.Heights.ClearanceHeight;
 }

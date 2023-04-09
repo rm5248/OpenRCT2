@@ -45,7 +45,6 @@ bool IsUserStringID(StringId stringId);
 #define MAX_USER_STRINGS 1024
 #define USER_STRING_MAX_LENGTH 32
 
-#define USER_STRING_START 0x8000
 #define USER_STRING_END 0x8FFF
 #define REAL_NAME_START 0xA000
 #define REAL_NAME_END 0xDFFF
@@ -59,7 +58,6 @@ extern const char* real_names[1024];
 extern thread_local char gCommonStringFormatBuffer[CommonTextBufferSize];
 extern bool gDebugStringFormatting;
 
-extern const StringId SpeedNames[5];
 extern const StringId ObjectiveNames[12];
 extern const StringId ResearchFundingLevelNames[4];
 extern const StringId MarketingCampaignNames[ADVERTISING_CAMPAIGN_COUNT][3];

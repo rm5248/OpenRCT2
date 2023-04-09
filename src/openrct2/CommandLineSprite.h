@@ -7,4 +7,10 @@
  * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
 
-#include "SceneryObject.h"
+#pragma once
+
+#include "common.h"
+#include "drawing/ImageImporter.h"
+
+int32_t CommandLineForSprite(const char** argv, int32_t argc);
+extern OpenRCT2::Drawing::ImageImporter::ImportMode gSpriteMode;

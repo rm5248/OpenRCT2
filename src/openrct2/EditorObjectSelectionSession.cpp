@@ -28,7 +28,6 @@
 #include "scenario/Scenario.h"
 #include "windows/Intent.h"
 #include "world/Footpath.h"
-#include "world/LargeScenery.h"
 #include "world/Scenery.h"
 
 #include <iterator>
@@ -672,11 +671,17 @@ int32_t EditorRemoveUnusedObjects()
             {
                 const ObjectRepositoryItem* item = &items[i];
                 ObjectType objectType = item->Type;
-
-                if (objectType >= ObjectType::SceneryGroup)
-                {
+                if (ObjectTypeIsIntransient(objectType))
                     continue;
-                }
+
+                // These object types require exactly one object to be selected at all times.
+                // Removing that object can badly break the game state.
+                if (objectType == ObjectType::ParkEntrance || objectType == ObjectType::Water)
+                    continue;
+
+                // It’s hard to determine exactly if a scenery group is used, so do not remove these automatically.
+                if (objectType == ObjectType::SceneryGroup)
+                    continue;
 
                 _numSelectedObjectsForType[EnumValue(objectType)]--;
                 _objectSelectionFlags[i] &= ~ObjectSelectionFlags::Selected;

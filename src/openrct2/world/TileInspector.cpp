@@ -25,7 +25,6 @@
 #include "../windows/TileInspectorGlobals.h"
 #include "Banner.h"
 #include "Footpath.h"
-#include "LargeScenery.h"
 #include "Location.hpp"
 #include "Map.h"
 #include "Park.h"
@@ -623,6 +622,28 @@ namespace OpenRCT2::TileInspector
         if (isExecuting)
         {
             pathElement->AsPath()->SetSloped(sloped);
+
+            MapInvalidateTileFull(loc);
+
+            if (auto* inspector = GetTileInspectorWithPos(loc); inspector != nullptr)
+            {
+                inspector->Invalidate();
+            }
+        }
+
+        return GameActions::Result();
+    }
+
+    GameActions::Result PathSetJunctionRailings(
+        const CoordsXY& loc, int32_t elementIndex, bool hasJunctionRailings, bool isExecuting)
+    {
+        TileElement* const pathElement = MapGetNthElementAt(loc, elementIndex);
+        if (pathElement == nullptr || pathElement->GetType() != TileElementType::Path)
+            return GameActions::Result(GameActions::Status::Unknown, STR_NONE, STR_NONE);
+
+        if (isExecuting)
+        {
+            pathElement->AsPath()->SetJunctionRailings(hasJunctionRailings);
 
             MapInvalidateTileFull(loc);
 

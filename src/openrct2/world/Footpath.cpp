@@ -22,9 +22,11 @@
 #include "../localisation/Localisation.h"
 #include "../management/Finance.h"
 #include "../network/network.h"
+#include "../object/FootpathItemEntry.h"
 #include "../object/FootpathObject.h"
 #include "../object/FootpathRailingsObject.h"
 #include "../object/FootpathSurfaceObject.h"
+#include "../object/ObjectEntryManager.h"
 #include "../object/ObjectList.h"
 #include "../object/ObjectManager.h"
 #include "../paint/VirtualFloor.h"
@@ -59,8 +61,8 @@ static RideId _footpathQueueChain[64];
 
 // This is the coordinates that a user of the bin should move to
 // rct2: 0x00992A4C
-const CoordsXY BinUseOffsets[4] = {
-    { 11, 16 },
+const std::array<CoordsXY, NumOrthogonalDirections> BinUseOffsets = {
+    CoordsXY{ 11, 16 },
     { 16, 21 },
     { 21, 16 },
     { 16, 11 },
@@ -68,13 +70,13 @@ const CoordsXY BinUseOffsets[4] = {
 
 // These are the offsets for bench positions on footpaths, 2 for each edge
 // rct2: 0x00981F2C, 0x00981F2E
-const CoordsXY BenchUseOffsets[8] = {
-    { 7, 12 }, { 12, 25 }, { 25, 20 }, { 20, 7 }, { 7, 20 }, { 20, 25 }, { 25, 12 }, { 12, 7 },
+const std::array<CoordsXY, NumOrthogonalDirections* 2> BenchUseOffsets = {
+    CoordsXY{ 7, 12 }, { 12, 25 }, { 25, 20 }, { 20, 7 }, { 7, 20 }, { 20, 25 }, { 25, 12 }, { 12, 7 },
 };
 
 /** rct2: 0x00981D6C, 0x00981D6E */
-const CoordsXY DirectionOffsets[4] = {
-    { -1, 0 },
+const std::array<CoordsXY, NumOrthogonalDirections> DirectionOffsets = {
+    CoordsXY{ -1, 0 },
     { 0, 1 },
     { 1, 0 },
     { 0, -1 },
@@ -135,18 +137,18 @@ TileElement* MapGetFootpathElement(const CoordsXYZ& coords)
  *
  *  rct2: 0x006A76FF
  */
-money32 FootpathProvisionalSet(
+money64 FootpathProvisionalSet(
     ObjectEntryIndex type, ObjectEntryIndex railingsType, const CoordsXYZ& footpathLoc, int32_t slope,
     PathConstructFlags constructFlags)
 {
-    money32 cost;
+    money64 cost;
 
     FootpathProvisionalRemove();
 
     auto footpathPlaceAction = FootpathPlaceAction(footpathLoc, slope, type, railingsType, INVALID_DIRECTION, constructFlags);
     footpathPlaceAction.SetFlags(GAME_COMMAND_FLAG_GHOST | GAME_COMMAND_FLAG_ALLOW_DURING_PAUSED);
     auto res = GameActions::Execute(&footpathPlaceAction);
-    cost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY32_UNDEFINED;
+    cost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY64_UNDEFINED;
     if (res.Error == GameActions::Status::Ok)
     {
         gProvisionalFootpath.SurfaceIndex = type;
@@ -1512,6 +1514,18 @@ void PathElement::SetSloped(bool isSloped)
         Flags2 |= FOOTPATH_ELEMENT_FLAGS2_IS_SLOPED;
 }
 
+bool PathElement::HasJunctionRailings() const
+{
+    return Flags2 & FOOTPATH_ELEMENT_FLAGS2_HAS_JUNCTION_RAILINGS;
+}
+
+void PathElement::SetJunctionRailings(bool hasJunctionRailings)
+{
+    Flags2 &= ~FOOTPATH_ELEMENT_FLAGS2_HAS_JUNCTION_RAILINGS;
+    if (hasJunctionRailings)
+        Flags2 |= FOOTPATH_ELEMENT_FLAGS2_HAS_JUNCTION_RAILINGS;
+}
+
 Direction PathElement::GetSlopeDirection() const
 {
     return SlopeDirection;
@@ -1617,11 +1631,11 @@ ObjectEntryIndex PathElement::GetAdditionEntryIndex() const
     return GetAddition() - 1;
 }
 
-PathBitEntry* PathElement::GetAdditionEntry() const
+const PathBitEntry* PathElement::GetAdditionEntry() const
 {
     if (!HasAddition())
         return nullptr;
-    return GetFootpathItemEntry(GetAdditionEntryIndex());
+    return OpenRCT2::ObjectManager::GetObjectEntry<PathBitEntry>(GetAdditionEntryIndex());
 }
 
 void PathElement::SetAddition(uint8_t newAddition)

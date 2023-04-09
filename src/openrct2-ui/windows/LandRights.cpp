@@ -221,17 +221,17 @@ public:
         {
             auto ft = Formatter();
             ft.Add<uint16_t>(gLandToolSize);
-            DrawTextBasic(&dpi, screenCoords - ScreenCoordsXY{ 0, 2 }, STR_LAND_TOOL_SIZE_VALUE, ft, { TextAlignment::CENTRE });
+            DrawTextBasic(dpi, screenCoords - ScreenCoordsXY{ 0, 2 }, STR_LAND_TOOL_SIZE_VALUE, ft, { TextAlignment::CENTRE });
         }
 
         // Draw cost amount
-        if (_landRightsCost != MONEY32_UNDEFINED && _landRightsCost != 0 && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+        if (_landRightsCost != MONEY64_UNDEFINED && _landRightsCost != 0 && !(gParkFlags & PARK_FLAGS_NO_MONEY))
         {
             auto ft = Formatter();
             ft.Add<money64>(_landRightsCost);
             screenCoords = { window_land_rights_widgets[WIDX_PREVIEW].midX() + windowPos.x,
                              window_land_rights_widgets[WIDX_PREVIEW].bottom + windowPos.y + 32 };
-            DrawTextBasic(&dpi, screenCoords, STR_COST_AMOUNT, ft, { TextAlignment::CENTRE });
+            DrawTextBasic(dpi, screenCoords, STR_COST_AMOUNT, ft, { TextAlignment::CENTRE });
         }
     }
 
@@ -244,9 +244,9 @@ public:
 
         if (!mapTile.has_value())
         {
-            if (_landRightsCost != MONEY32_UNDEFINED)
+            if (_landRightsCost != MONEY64_UNDEFINED)
             {
-                _landRightsCost = MONEY32_UNDEFINED;
+                _landRightsCost = MONEY64_UNDEFINED;
                 WindowInvalidateByClass(WindowClass::ClearScenery);
             }
             return;
@@ -314,7 +314,7 @@ public:
                                                            : LandBuyRightSetting::BuyConstructionRights);
         auto res = GameActions::Query(&landBuyRightsAction);
 
-        _landRightsCost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY32_UNDEFINED;
+        _landRightsCost = res.Error == GameActions::Status::Ok ? res.Cost : MONEY64_UNDEFINED;
     }
 
     void OnToolAbort(WidgetIndex widgetIndex) override
@@ -379,7 +379,7 @@ public:
 
 private:
     uint8_t _landRightsMode;
-    money32 _landRightsCost;
+    money64 _landRightsCost;
 
     void InputSize()
     {

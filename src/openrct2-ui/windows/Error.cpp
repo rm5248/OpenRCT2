@@ -37,7 +37,7 @@ private:
 
 public:
     ErrorWindow(std::string text, uint16_t numLines)
-        : _text(text)
+        : _text(std::move(text))
         , _numLines(numLines)
     {
     }
@@ -94,7 +94,7 @@ public:
             FilterPaletteID::PaletteDarken3);
 
         DrawStringCentredRaw(
-            &dpi, { leftTop + ScreenCoordsXY{ (width + 1) / 2 - 1, 1 } }, _numLines, _text.data(), FontStyle::Medium);
+            dpi, { leftTop + ScreenCoordsXY{ (width + 1) / 2 - 1, 1 } }, _numLines, _text.data(), FontStyle::Medium);
     }
 
     void OnUnknown5() override
@@ -139,7 +139,7 @@ WindowBase* WindowErrorOpen(std::string_view title, std::string_view message)
     width = std::clamp(width, 64, 196);
 
     int32_t numLines{};
-    GfxWrapString(buffer.data(), width + 1, FontStyle::Medium, &numLines);
+    GfxWrapString(buffer, width + 1, FontStyle::Medium, &buffer, &numLines);
 
     width = width + 3;
     int32_t height = (numLines + 1) * FontGetLineHeight(FontStyle::Medium) + 4;
@@ -155,7 +155,7 @@ WindowBase* WindowErrorOpen(std::string_view title, std::string_view message)
         windowPosition.y = std::min(windowPosition.y - height - 40, maxY);
     }
 
-    auto errorWindow = std::make_unique<ErrorWindow>(buffer, numLines);
+    auto errorWindow = std::make_unique<ErrorWindow>(std::move(buffer), numLines);
     return WindowCreate(
         std::move(errorWindow), WindowClass::Error, windowPosition, width, height,
         WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_RESIZABLE);

@@ -47,7 +47,10 @@
 static constexpr const StringId WINDOW_TITLE = STR_RIDE_CONSTRUCTION_WINDOW_TITLE;
 static constexpr const int32_t WH = 394;
 static constexpr const int32_t WW = 166;
+
 static constexpr const uint16_t ARROW_PULSE_DURATION = 200;
+// Width of the group boxes, e.g. “Banking”
+static constexpr const int32_t GW = WW - 6;
 
 using namespace OpenRCT2::TrackMetaData;
 
@@ -109,41 +112,41 @@ validate_global_widx(WC_RIDE_CONSTRUCTION, WIDX_ROTATE);
 // clang-format off
 static Widget window_ride_construction_widgets[] = {
     WINDOW_SHIM(WINDOW_TITLE, WW, WH),
-    MakeWidget        ({  3,  17}, {160,  57}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_DIRECTION                                                              ),
-    MakeWidget        ({  3,  76}, {160,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_SLOPE                                                                  ),
-    MakeWidget        ({  3, 120}, {160,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_ROLL_BANKING                                                           ),
-    MakeWidget        ({  6,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_VERY_SMALL_TIP     ),
-    MakeWidget        ({  6,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL_TIP          ),
-    MakeWidget        ({ 28,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE),        STR_RIDE_CONSTRUCTION_LEFT_CURVE_TIP                ),
-    MakeWidget        ({ 50,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_LARGE),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_LARGE_TIP          ),
-    MakeWidget        ({ 72,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_STRAIGHT),          STR_RIDE_CONSTRUCTION_STRAIGHT_TIP                  ),
-    MakeWidget        ({ 94,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_LARGE), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_LARGE_TIP         ),
-    MakeWidget        ({116,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE),       STR_RIDE_CONSTRUCTION_RIGHT_CURVE_TIP               ),
-    MakeWidget        ({138,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL_TIP         ),
-    MakeWidget        ({138,  29}, { 22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_VERY_SMALL_TIP    ),
-    MakeWidget        ({  6,  55}, {154,  14}, WindowWidgetType::Button,   WindowColour::Secondary, STR_YELLOW_STRING,                       STR_RIDE_CONSTRUCTION_OTHER_TRACK_CONFIGURATIONS_TIP),
-    MakeWidget        ({ 23,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_DOWN_STEEP),  STR_RIDE_CONSTRUCTION_STEEP_SLOPE_DOWN_TIP          ),
-    MakeWidget        ({ 47,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_DOWN),        STR_RIDE_CONSTRUCTION_SLOPE_DOWN_TIP                ),
-    MakeWidget        ({ 71,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_LEVEL),       STR_RIDE_CONSTRUCTION_LEVEL_TIP                     ),
-    MakeWidget        ({ 95,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_UP),          STR_RIDE_CONSTRUCTION_SLOPE_UP_TIP                  ),
-    MakeWidget        ({119,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_UP_STEEP),    STR_RIDE_CONSTRUCTION_STEEP_SLOPE_UP_TIP            ),
-    MakeWidget        ({134,  88}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_CHAIN_LIFT),                          STR_RIDE_CONSTRUCTION_CHAIN_LIFT_TIP                ),
-    MakeWidget        ({ 47, 132}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_BANK),         STR_RIDE_CONSTRUCTION_ROLL_FOR_LEFT_CURVE_TIP       ),
-    MakeWidget        ({ 71, 132}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_NO_BANK),           STR_RIDE_CONSTRUCTION_NO_ROLL_TIP                   ),
-    MakeWidget        ({ 95, 132}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_BANK),        STR_RIDE_CONSTRUCTION_ROLL_FOR_RIGHT_CURVE_TIP      ),
-    MakeWidget        ({  3, 164}, {160, 170}, WindowWidgetType::ImgBtn,   WindowColour::Secondary, 0xFFFFFFFF,                              STR_RIDE_CONSTRUCTION_CONSTRUCT_SELECTED_SECTION_TIP),
-    MakeWidget        ({ 60, 338}, { 46,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_DEMOLISH_CURRENT_SECTION),            STR_RIDE_CONSTRUCTION_REMOVE_HIGHLIGHTED_SECTION_TIP),
-    MakeWidget        ({ 30, 338}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_PREVIOUS),                            STR_RIDE_CONSTRUCTION_MOVE_TO_PREVIOUS_SECTION_TIP  ),
-    MakeWidget        ({112, 338}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_NEXT),                                STR_RIDE_CONSTRUCTION_MOVE_TO_NEXT_SECTION_TIP      ),
-    MakeWidget        ({  3, 362}, {160,  28}, WindowWidgetType::Groupbox, WindowColour::Primary                                                                                                 ),
-    MakeWidget        ({  9, 372}, { 70,  12}, WindowWidgetType::Button,   WindowColour::Secondary, STR_RIDE_CONSTRUCTION_ENTRANCE,          STR_RIDE_CONSTRUCTION_ENTRANCE_TIP                  ),
-    MakeWidget        ({ 87, 372}, { 70,  12}, WindowWidgetType::Button,   WindowColour::Secondary, STR_RIDE_CONSTRUCTION_EXIT,              STR_RIDE_CONSTRUCTION_EXIT_TIP                      ),
-    MakeWidget        ({ 72, 338}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_ROTATE_ARROW),                        STR_ROTATE_90_TIP                                   ),
-    MakeWidget        ({ 19, 132}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_U_SHAPED_TRACK),    STR_RIDE_CONSTRUCTION_U_SHAPED_OPEN_TRACK_TIP       ),
-    MakeWidget        ({123, 132}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_O_SHAPED_TRACK),    STR_RIDE_CONSTRUCTION_O_SHAPED_ENCLOSED_TRACK_TIP   ),
-    MakeWidget        ({ 96, 120}, { 67,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_SEAT_ROT                                                               ),
-    MakeSpinnerWidgets({101, 138}, { 58,  12}, WindowWidgetType::Spinner,  WindowColour::Secondary, 0,                                       STR_RIDE_CONSTRUCTION_SELECT_SEAT_ROTATION_ANGLE_TIP),
-    MakeWidget        ({139, 338}, { 24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_G2_SIMULATE),                         STR_SIMULATE_RIDE_TIP                               ),
+    MakeWidget        ({  3,  17}, {     GW,  57}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_DIRECTION                                                                       ),
+    MakeWidget        ({  3,  76}, {     GW,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_SLOPE                                                                           ),
+    MakeWidget        ({  3, 120}, {     GW,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_ROLL_BANKING                                                                    ),
+    MakeWidget        ({  6,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_VERY_SMALL_TIP     ),
+    MakeWidget        ({  6,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_SMALL_TIP          ),
+    MakeWidget        ({ 28,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE),        STR_RIDE_CONSTRUCTION_LEFT_CURVE_TIP                ),
+    MakeWidget        ({ 50,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_CURVE_LARGE),  STR_RIDE_CONSTRUCTION_LEFT_CURVE_LARGE_TIP          ),
+    MakeWidget        ({ 72,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_STRAIGHT),          STR_RIDE_CONSTRUCTION_STRAIGHT_TIP                  ),
+    MakeWidget        ({ 94,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_LARGE), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_LARGE_TIP         ),
+    MakeWidget        ({116,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE),       STR_RIDE_CONSTRUCTION_RIGHT_CURVE_TIP               ),
+    MakeWidget        ({138,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL_TIP         ),
+    MakeWidget        ({138,  29}, {     22,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_CURVE_SMALL), STR_RIDE_CONSTRUCTION_RIGHT_CURVE_VERY_SMALL_TIP    ),
+    MakeWidget        ({  6,  55}, { GW - 6,  14}, WindowWidgetType::Button,   WindowColour::Secondary, STR_YELLOW_STRING,                                STR_RIDE_CONSTRUCTION_OTHER_TRACK_CONFIGURATIONS_TIP),
+    MakeWidget        ({ 23,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_DOWN_STEEP),  STR_RIDE_CONSTRUCTION_STEEP_SLOPE_DOWN_TIP          ),
+    MakeWidget        ({ 47,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_DOWN),        STR_RIDE_CONSTRUCTION_SLOPE_DOWN_TIP                ),
+    MakeWidget        ({ 71,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_LEVEL),       STR_RIDE_CONSTRUCTION_LEVEL_TIP                     ),
+    MakeWidget        ({ 95,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_UP),          STR_RIDE_CONSTRUCTION_SLOPE_UP_TIP                  ),
+    MakeWidget        ({119,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_SLOPE_UP_STEEP),    STR_RIDE_CONSTRUCTION_STEEP_SLOPE_UP_TIP            ),
+    MakeWidget        ({134,  88}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_CHAIN_LIFT),                          STR_RIDE_CONSTRUCTION_CHAIN_LIFT_TIP                ),
+    MakeWidget        ({ 47, 132}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_LEFT_BANK),         STR_RIDE_CONSTRUCTION_ROLL_FOR_LEFT_CURVE_TIP       ),
+    MakeWidget        ({ 71, 132}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_NO_BANK),           STR_RIDE_CONSTRUCTION_NO_ROLL_TIP                   ),
+    MakeWidget        ({ 95, 132}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_RIGHT_BANK),        STR_RIDE_CONSTRUCTION_ROLL_FOR_RIGHT_CURVE_TIP      ),
+    MakeWidget        ({  3, 164}, {     GW, 170}, WindowWidgetType::ImgBtn,   WindowColour::Secondary, 0xFFFFFFFF,                                       STR_RIDE_CONSTRUCTION_CONSTRUCT_SELECTED_SECTION_TIP),
+    MakeWidget        ({ 60, 338}, {     46,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_DEMOLISH_CURRENT_SECTION),            STR_RIDE_CONSTRUCTION_REMOVE_HIGHLIGHTED_SECTION_TIP),
+    MakeWidget        ({ 30, 338}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_PREVIOUS),                            STR_RIDE_CONSTRUCTION_MOVE_TO_PREVIOUS_SECTION_TIP  ),
+    MakeWidget        ({112, 338}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_NEXT),                                STR_RIDE_CONSTRUCTION_MOVE_TO_NEXT_SECTION_TIP      ),
+    MakeWidget        ({  3, 362}, {     GW,  28}, WindowWidgetType::Groupbox, WindowColour::Primary                                                                                                          ),
+    MakeWidget        ({  9, 372}, {     70,  12}, WindowWidgetType::Button,   WindowColour::Secondary, STR_RIDE_CONSTRUCTION_ENTRANCE,                   STR_RIDE_CONSTRUCTION_ENTRANCE_TIP                  ),
+    MakeWidget        ({ 87, 372}, {     70,  12}, WindowWidgetType::Button,   WindowColour::Secondary, STR_RIDE_CONSTRUCTION_EXIT,                       STR_RIDE_CONSTRUCTION_EXIT_TIP                      ),
+    MakeWidget        ({ 72, 338}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_ROTATE_ARROW),                        STR_ROTATE_90_TIP                                   ),
+    MakeWidget        ({ 19, 132}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_U_SHAPED_TRACK),    STR_RIDE_CONSTRUCTION_U_SHAPED_OPEN_TRACK_TIP       ),
+    MakeWidget        ({123, 132}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_RIDE_CONSTRUCTION_O_SHAPED_TRACK),    STR_RIDE_CONSTRUCTION_O_SHAPED_ENCLOSED_TRACK_TIP   ),
+    MakeWidget        ({ 96, 120}, {     67,  41}, WindowWidgetType::Groupbox, WindowColour::Primary  , STR_RIDE_CONSTRUCTION_SEAT_ROT                                                                        ),
+    MakeSpinnerWidgets({101, 138}, {     58,  12}, WindowWidgetType::Spinner,  WindowColour::Secondary, 0,                                                STR_RIDE_CONSTRUCTION_SELECT_SEAT_ROTATION_ANGLE_TIP),
+    MakeWidget        ({139, 338}, {     24,  24}, WindowWidgetType::FlatBtn,  WindowColour::Secondary, ImageId(SPR_G2_SIMULATE),                         STR_SIMULATE_RIDE_TIP                               ),
     WIDGETS_END,
 };
 // clang-format on
@@ -156,7 +159,7 @@ static bool _trackPlaceShiftState;
 static ScreenCoordsXY _trackPlaceShiftStart;
 static int32_t _trackPlaceShiftZ;
 static int32_t _trackPlaceZ;
-static money32 _trackPlaceCost;
+static money64 _trackPlaceCost;
 static StringId _trackPlaceErrorMessage;
 static bool _autoRotatingShop;
 static bool _gotoStartPlacementMode = false;
@@ -219,7 +222,7 @@ public:
         WindowPushOthersRight(*this);
         ShowGridlines();
 
-        _currentTrackPrice = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
         _currentBrakeSpeed2 = 8;
         _currentSeatRotationAngle = 4;
 
@@ -985,49 +988,49 @@ public:
             case WIDX_LEFT_CURVE:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_LEFT;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_RIGHT_CURVE:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_RIGHT;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_LEFT_CURVE_SMALL:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_LEFT_SMALL;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_RIGHT_CURVE_SMALL:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_RIGHT_SMALL;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_LEFT_CURVE_VERY_SMALL:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_LEFT_VERY_SMALL;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_RIGHT_CURVE_VERY_SMALL:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_RIGHT_VERY_SMALL;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_LEFT_CURVE_LARGE:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_LEFT_LARGE;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_RIGHT_CURVE_LARGE:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackCurve = TRACK_CURVE_RIGHT_LARGE;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_STRAIGHT:
@@ -1035,7 +1038,7 @@ public:
                 if (_currentTrackCurve != TRACK_CURVE_NONE)
                     _currentTrackBankEnd = TRACK_BANK_NONE;
                 _currentTrackCurve = TRACK_CURVE_NONE;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_SLOPE_DOWN_STEEP:
@@ -1045,7 +1048,7 @@ public:
                     if (_currentTrackCurve == TRACK_CURVE_LEFT && _currentTrackBankEnd == TRACK_BANK_LEFT)
                     {
                         _currentTrackCurve = TrackElemType::LeftHalfBankedHelixDownLarge | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1053,14 +1056,14 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::RightHalfBankedHelixDownLarge
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
                     if (_currentTrackCurve == TRACK_CURVE_LEFT_SMALL && _currentTrackBankEnd == TRACK_BANK_LEFT)
                     {
                         _currentTrackCurve = TrackElemType::LeftHalfBankedHelixDownSmall | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1068,7 +1071,7 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::RightHalfBankedHelixDownSmall
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1079,7 +1082,7 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::LeftQuarterBankedHelixLargeDown
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1087,7 +1090,7 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::RightQuarterBankedHelixLargeDown
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1100,7 +1103,7 @@ public:
                         {
                             _currentTrackCurve = TrackElemType::LeftQuarterHelixLargeDown
                                 | RideConstructionSpecialPieceSelected;
-                            _currentTrackPrice = MONEY32_UNDEFINED;
+                            _currentTrackPrice = MONEY64_UNDEFINED;
                             WindowRideConstructionUpdateActiveElements();
                             break;
                         }
@@ -1108,7 +1111,7 @@ public:
                         {
                             _currentTrackCurve = TrackElemType::RightQuarterHelixLargeDown
                                 | RideConstructionSpecialPieceSelected;
-                            _currentTrackPrice = MONEY32_UNDEFINED;
+                            _currentTrackPrice = MONEY64_UNDEFINED;
                             WindowRideConstructionUpdateActiveElements();
                             break;
                         }
@@ -1183,28 +1186,28 @@ public:
                     if (_currentTrackCurve == TRACK_CURVE_LEFT && _currentTrackBankEnd == TRACK_BANK_LEFT)
                     {
                         _currentTrackCurve = TrackElemType::LeftHalfBankedHelixUpLarge | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
                     if (_currentTrackCurve == TRACK_CURVE_RIGHT && _currentTrackBankEnd == TRACK_BANK_RIGHT)
                     {
                         _currentTrackCurve = TrackElemType::RightHalfBankedHelixUpLarge | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
                     if (_currentTrackCurve == TRACK_CURVE_LEFT_SMALL && _currentTrackBankEnd == TRACK_BANK_LEFT)
                     {
                         _currentTrackCurve = TrackElemType::LeftHalfBankedHelixUpSmall | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
                     if (_currentTrackCurve == TRACK_CURVE_RIGHT_SMALL && _currentTrackBankEnd == TRACK_BANK_RIGHT)
                     {
                         _currentTrackCurve = TrackElemType::RightHalfBankedHelixUpSmall | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1215,7 +1218,7 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::LeftQuarterBankedHelixLargeUp
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1223,7 +1226,7 @@ public:
                     {
                         _currentTrackCurve = TrackElemType::RightQuarterBankedHelixLargeUp
                             | RideConstructionSpecialPieceSelected;
-                        _currentTrackPrice = MONEY32_UNDEFINED;
+                        _currentTrackPrice = MONEY64_UNDEFINED;
                         WindowRideConstructionUpdateActiveElements();
                         break;
                     }
@@ -1235,14 +1238,14 @@ public:
                         if (_currentTrackCurve == TRACK_CURVE_LEFT)
                         {
                             _currentTrackCurve = TrackElemType::LeftQuarterHelixLargeUp | RideConstructionSpecialPieceSelected;
-                            _currentTrackPrice = MONEY32_UNDEFINED;
+                            _currentTrackPrice = MONEY64_UNDEFINED;
                             WindowRideConstructionUpdateActiveElements();
                             break;
                         }
                         if (_currentTrackCurve == TRACK_CURVE_RIGHT)
                         {
                             _currentTrackCurve = TrackElemType::RightQuarterHelixLargeUp | RideConstructionSpecialPieceSelected;
-                            _currentTrackPrice = MONEY32_UNDEFINED;
+                            _currentTrackPrice = MONEY64_UNDEFINED;
                             WindowRideConstructionUpdateActiveElements();
                             break;
                         }
@@ -1262,7 +1265,7 @@ public:
                 _currentTrackLiftHill ^= CONSTRUCTION_LIFT_HILL_SELECTED;
                 if ((_currentTrackLiftHill & CONSTRUCTION_LIFT_HILL_SELECTED) && !gCheatsEnableChainLiftOnAllTrack)
                     _currentTrackAlternative &= ~RIDE_TYPE_ALTERNATIVE_TRACK_PIECES;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_BANK_LEFT:
@@ -1270,7 +1273,7 @@ public:
                 if (!_currentlyShowingBrakeOrBoosterSpeed)
                 {
                     _currentTrackBankEnd = TRACK_BANK_LEFT;
-                    _currentTrackPrice = MONEY32_UNDEFINED;
+                    _currentTrackPrice = MONEY64_UNDEFINED;
                     WindowRideConstructionUpdateActiveElements();
                 }
                 break;
@@ -1279,7 +1282,7 @@ public:
                 if (!_currentlyShowingBrakeOrBoosterSpeed)
                 {
                     _currentTrackBankEnd = TRACK_BANK_NONE;
-                    _currentTrackPrice = MONEY32_UNDEFINED;
+                    _currentTrackPrice = MONEY64_UNDEFINED;
                     WindowRideConstructionUpdateActiveElements();
                 }
                 else
@@ -1306,7 +1309,7 @@ public:
                 if (!_currentlyShowingBrakeOrBoosterSpeed)
                 {
                     _currentTrackBankEnd = TRACK_BANK_RIGHT;
-                    _currentTrackPrice = MONEY32_UNDEFINED;
+                    _currentTrackPrice = MONEY64_UNDEFINED;
                     WindowRideConstructionUpdateActiveElements();
                 }
                 else
@@ -1333,7 +1336,7 @@ public:
             case WIDX_U_TRACK:
                 RideConstructionInvalidateCurrentTrack();
                 _currentTrackAlternative &= ~RIDE_TYPE_ALTERNATIVE_TRACK_PIECES;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_O_TRACK:
@@ -1341,7 +1344,7 @@ public:
                 _currentTrackAlternative |= RIDE_TYPE_ALTERNATIVE_TRACK_PIECES;
                 if (!gCheatsEnableChainLiftOnAllTrack)
                     _currentTrackLiftHill &= ~CONSTRUCTION_LIFT_HILL_SELECTED;
-                _currentTrackPrice = MONEY32_UNDEFINED;
+                _currentTrackPrice = MONEY64_UNDEFINED;
                 WindowRideConstructionUpdateActiveElements();
                 break;
             case WIDX_SEAT_ROTATION_ANGLE_SPINNER_UP:
@@ -1383,7 +1386,7 @@ public:
             return;
 
         RideConstructionInvalidateCurrentTrack();
-        _currentTrackPrice = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
         track_type_t trackPiece = _currentPossibleRideConfigurations[selectedIndex];
         switch (trackPiece)
         {
@@ -1517,14 +1520,14 @@ public:
         // Draw cost
         screenCoords = { windowPos.x + widget->midX(), windowPos.y + widget->bottom - 23 };
         if (_rideConstructionState != RideConstructionState::Place)
-            DrawTextBasic(&dpi, screenCoords, STR_BUILD_THIS, {}, { TextAlignment::CENTRE });
+            DrawTextBasic(dpi, screenCoords, STR_BUILD_THIS, {}, { TextAlignment::CENTRE });
 
         screenCoords.y += 11;
-        if (_currentTrackPrice != MONEY32_UNDEFINED && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+        if (_currentTrackPrice != MONEY64_UNDEFINED && !(gParkFlags & PARK_FLAGS_NO_MONEY))
         {
             auto ft = Formatter();
             ft.Add<money64>(_currentTrackPrice);
-            DrawTextBasic(&dpi, screenCoords, STR_COST_LABEL, ft, { TextAlignment::CENTRE });
+            DrawTextBasic(dpi, screenCoords, STR_COST_LABEL, ft, { TextAlignment::CENTRE });
         }
     }
 
@@ -2248,8 +2251,8 @@ private:
         int32_t trackType, trackDirection, liftHillAndAlternativeState, properties;
         CoordsXYZ trackPos{};
 
-        _currentTrackPrice = MONEY32_UNDEFINED;
-        _trackPlaceCost = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
+        _trackPlaceCost = MONEY64_UNDEFINED;
         _trackPlaceErrorMessage = STR_NONE;
         RideConstructionInvalidateCurrentTrack();
         if (WindowRideConstructionUpdateState(
@@ -2280,7 +2283,7 @@ private:
         // Used by some functions
         if (res.Error != GameActions::Status::Ok)
         {
-            _trackPlaceCost = MONEY32_UNDEFINED;
+            _trackPlaceCost = MONEY64_UNDEFINED;
             _trackPlaceErrorMessage = std::get<StringId>(res.ErrorMessage);
         }
         else
@@ -2321,7 +2324,7 @@ private:
         CoordsXYE inputElement, outputElement;
         TrackBeginEnd trackBeginEnd;
 
-        _currentTrackPrice = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
         RideConstructionInvalidateCurrentTrack();
 
         // Select the track element that is to be deleted
@@ -2430,7 +2433,7 @@ private:
         _autoRotatingShop = false;
         _currentTrackPieceDirection = (_currentTrackPieceDirection + 1) & 3;
         RideConstructionInvalidateCurrentTrack();
-        _currentTrackPrice = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
         WindowRideConstructionUpdateActiveElements();
     }
 
@@ -2489,7 +2492,7 @@ private:
     void UpdateLiftHillSelected(int32_t slope)
     {
         _currentTrackSlopeEnd = slope;
-        _currentTrackPrice = MONEY32_UNDEFINED;
+        _currentTrackPrice = MONEY64_UNDEFINED;
         if (_rideConstructionState == RideConstructionState::Front && !gCheatsEnableChainLiftOnAllTrack)
         {
             switch (slope)
@@ -2689,6 +2692,10 @@ private:
 
         const auto& ted = GetTrackElementDescriptor(trackType);
         const auto* trackBlock = ted.Block;
+        const auto* rideEntry = currentRide->GetRideEntry();
+        auto clearanceHeight = (rideEntry != nullptr) ? rideEntry->Clearance
+                                                      : currentRide->GetRideTypeDescriptor().Heights.ClearanceHeight;
+
         while (trackBlock->index != 255)
         {
             auto quarterTile = trackBlock->var_08.Rotate(trackDirection);
@@ -2696,8 +2703,7 @@ private:
             CoordsXY coords = originCoords + offsets.Rotate(trackDirection);
 
             int32_t baseZ = originZ + trackBlock->z;
-            int32_t clearanceZ = trackBlock->var_07 + currentRide->GetRideTypeDescriptor().Heights.ClearanceHeight + baseZ
-                + (4 * COORDS_Z_STEP);
+            int32_t clearanceZ = trackBlock->var_07 + clearanceHeight + baseZ + (4 * COORDS_Z_STEP);
 
             auto centreTileCoords = TileCoordsXY{ coords };
             auto eastTileCoords = centreTileCoords + TileDirectionDelta[TILE_ELEMENT_DIRECTION_EAST];
@@ -3348,7 +3354,7 @@ void RideConstructionToolupdateConstruct(const ScreenCoordsXY& screenCoords)
                 &trackType, &trackDirection, &rideIndex, &liftHillAndAlternativeState, &trackPos, nullptr);
             _currentTrackPrice = PlaceProvisionalTrackPiece(
                 rideIndex, trackType, trackDirection, liftHillAndAlternativeState, trackPos);
-            if (_currentTrackPrice != MONEY32_UNDEFINED)
+            if (_currentTrackPrice != MONEY64_UNDEFINED)
                 break;
 
             _currentTrackBegin.z -= 8;
@@ -3373,7 +3379,7 @@ void RideConstructionToolupdateConstruct(const ScreenCoordsXY& screenCoords)
             rideIndex, trackType, trackDirection, liftHillAndAlternativeState, trackPos);
         mapCoords = trackPos;
         z = trackPos.z;
-        if (_currentTrackPrice != MONEY32_UNDEFINED)
+        if (_currentTrackPrice != MONEY64_UNDEFINED)
             break;
 
         _currentTrackBegin.z -= 8;
@@ -3605,7 +3611,7 @@ void RideConstructionTooldownConstruct(const ScreenCoordsXY& screenCoords)
             }
             else
             {
-                _trackPlaceCost = MONEY32_UNDEFINED;
+                _trackPlaceCost = MONEY64_UNDEFINED;
                 _trackPlaceErrorMessage = std::get<StringId>(mazeSetTrackResult.ErrorMessage);
             }
 
@@ -3662,7 +3668,7 @@ void RideConstructionTooldownConstruct(const ScreenCoordsXY& screenCoords)
         WindowEventMouseUpCall(w, WIDX_CONSTRUCT);
         gDisableErrorWindowSound = false;
 
-        if (_trackPlaceCost == MONEY32_UNDEFINED)
+        if (_trackPlaceCost == MONEY64_UNDEFINED)
         {
             StringId errorText = _trackPlaceErrorMessage;
             z -= 8;

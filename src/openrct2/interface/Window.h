@@ -46,7 +46,7 @@ enum class CloseWindowModifier : uint8_t;
 #define TEXT_INPUT_SIZE 1024
 #define TOP_TOOLBAR_HEIGHT 27
 
-extern char gTextBoxInput[TEXT_INPUT_SIZE];
+extern u8string gTextBoxInput;
 extern int32_t gTextBoxFrameNo;
 extern bool gUsingWidgetTextBox;
 extern struct TextInputSession* gTextInput;
@@ -178,18 +178,18 @@ struct Viewport
  */
 struct ScrollBar
 {
-    uint16_t flags{};          // 0x00
-    uint16_t h_left{};         // 0x02
-    uint16_t h_right{};        // 0x04
-    uint16_t h_thumb_left{};   // 0x06
-    uint16_t h_thumb_right{};  // 0x08
-    uint16_t v_top{};          // 0x0A
-    uint16_t v_bottom{};       // 0x0C
-    uint16_t v_thumb_top{};    // 0x0E
-    uint16_t v_thumb_bottom{}; // 0x10
+    uint16_t flags{};
+    int32_t h_left{};
+    int32_t h_right{};
+    int32_t h_thumb_left{};
+    int32_t h_thumb_right{};
+    int32_t v_top{};
+    int32_t v_bottom{};
+    int32_t v_thumb_top{};
+    int32_t v_thumb_bottom{};
 };
 
-constexpr auto WINDOW_SCROLL_UNDEFINED = std::numeric_limits<uint16_t>::max();
+constexpr auto WINDOW_SCROLL_UNDEFINED = std::numeric_limits<int32_t>::max();
 
 struct Focus
 {
@@ -240,7 +240,7 @@ struct WindowEventList
     void (*scroll_mousedown)(struct WindowBase*, int32_t, const ScreenCoordsXY&){};
     void (*scroll_mousedrag)(struct WindowBase*, int32_t, const ScreenCoordsXY&){};
     void (*scroll_mouseover)(struct WindowBase*, int32_t, const ScreenCoordsXY&){};
-    void (*text_input)(struct WindowBase*, WidgetIndex, char*){};
+    void (*text_input)(struct WindowBase*, WidgetIndex, const char*){};
     void (*viewport_rotate)(struct WindowBase*){};
     void (*scroll_select)(struct WindowBase*, int32_t, int32_t){};
     OpenRCT2String (*tooltip)(struct WindowBase*, const WidgetIndex, const StringId){};
@@ -705,7 +705,7 @@ void WindowGetScrollSize(WindowBase* w, int32_t scrollIndex, int32_t* width, int
 void WindowEventScrollMousedownCall(WindowBase* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
 void WindowEventScrollMousedragCall(WindowBase* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
 void WindowEventScrollMouseoverCall(WindowBase* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
-void WindowEventTextinputCall(WindowBase* w, WidgetIndex widgetIndex, char* text);
+void WindowEventTextinputCall(WindowBase* w, WidgetIndex widgetIndex, const char* text);
 void WindowEventViewportRotateCall(WindowBase* w);
 void WindowEventScrollSelectCall(WindowBase* w, int32_t scrollIndex, int32_t scrollAreaType);
 OpenRCT2String WindowEventTooltipCall(WindowBase* w, const WidgetIndex widgetIndex, const StringId fallback);
@@ -761,7 +761,7 @@ void WindowUnfollowSprite(WindowBase& w);
 bool WindowRideConstructionUpdateState(
     int32_t* trackType, int32_t* trackDirection, RideId* rideIndex, int32_t* _liftHillAndAlternativeState, CoordsXYZ* trackPos,
     int32_t* properties);
-money32 PlaceProvisionalTrackPiece(
+money64 PlaceProvisionalTrackPiece(
     RideId rideIndex, int32_t trackType, int32_t trackDirection, int32_t liftHillAndAlternativeState,
     const CoordsXYZ& trackPos);
 

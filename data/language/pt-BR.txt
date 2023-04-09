@@ -1245,7 +1245,7 @@ STR_1863    :Faxineiro
 STR_1864    :Mecânico
 STR_1865    :Segurança
 STR_1866    :Animador
-STR_1867    :{BLACK}{COMMA16} {STRINGID}
+STR_1867    :{BLACK}{COMMA32} {STRINGID}
 STR_1868    :Impossível alterar o número de rotações…
 STR_1869    :{WINDOW_COLOUR_2}Número de rotações:
 STR_1870    :Número de rotações completas
@@ -1675,7 +1675,7 @@ STR_2314    :{WINDOW_COLOUR_2}Comprimento da atração: {BLACK}{STRINGID}
 STR_2315    :{WINDOW_COLOUR_2}Custo aproximado: {BLACK}{CURRENCY}
 STR_2316    :{WINDOW_COLOUR_2}Espaço necessário: {BLACK}{COMMA16} x {COMMA16} blocos
 STR_2321    :{WINDOW_COLOUR_2}Número de atrações: {BLACK}{COMMA16}
-STR_2322    :{WINDOW_COLOUR_2}Funcionário: {BLACK}{COMMA16}
+STR_2322    :{WINDOW_COLOUR_2}Funcionário: {BLACK}{COMMA32}
 STR_2323    :{WINDOW_COLOUR_2}Tamanho do parque: {BLACK}{COMMA32}m²
 STR_2324    :{WINDOW_COLOUR_2}Tamanho do parque: {BLACK}{COMMA32}pés².
 STR_2325    :Comprar terreno para aumentar o tamanho do parque
@@ -2650,7 +2650,6 @@ STR_5375    :▲
 STR_5376    :▼
 STR_5404    :Este nome já existe
 STR_5440    :Minimizar tela inteira quando perder o foco
-STR_5441    :Identifica as atrações por tipo de pista,{NEWLINE}assim os veículos podem ser alterados {NEWLINE}depois (como no RCT1)
 STR_5442    :Forçar a classifi-{NEWLINE}cação do parque:
 STR_5447    :Tipo {STRINGID}
 STR_5448    :Atração / Veículo {STRINGID}
@@ -3647,6 +3646,9 @@ STR_6541    :{WINDOW_COLOUR_2}Rocky Mountain Construction Group, Josef Wiegand G
 STR_6542    :Contribuidores
 STR_6543    :Contribuidores…
 STR_6544    :Empréstimo não pode ser negativo!
+STR_6545    :Usar cálculo de juros do RCT1
+STR_6546    :Usar algoritmo de cálculo de juros do RollerCoaster Tycoon 1, que utilizava uma porcentagem fixa de aproximadamente 1,33%.
+STR_6547    :Todos os Cenários
 
 #############
 # Scenarios #
