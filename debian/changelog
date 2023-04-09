@@ -1,7 +1,3 @@
-openrct2 (0.4.4-develop-1) unstable; urgency=medium
-
- * Nightly develop build.
-
 openrct2 (0.4.4) stable; urgency=medium
 
  * Feature: [#11269] Add properties for speed and length of vehicle animations.
